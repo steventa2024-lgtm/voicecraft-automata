@@ -55,6 +55,7 @@
         <div><label>Port (LAN)</label><input id="port" value="25565" /></div>
         <div><label>Bot username</label><input id="username" value="ZeroPulse" /></div>
         <div><label>Bridge port</label><input id="bridgePort" value="8765" /></div>
+        <div><label>Pairing code (control from your phone)</label><input id="pairCode" placeholder="e.g. K7QM24" /></div>
       </div>
       <div class="row">
         <button id="start" class="primary">Start bridge</button>
@@ -86,6 +87,7 @@
           port: Number($("port").value),
           username: $("username").value.trim(),
           bridgePort: Number($("bridgePort").value),
+          pairCode: $("pairCode").value.trim().toUpperCase(),
         });
       $("stop").onclick = () => window.companion.stop();
       $("dash").onclick = () => window.companion.openDashboard("https://zeropulse.lovable.app/dashboard");

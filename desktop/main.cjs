@@ -29,6 +29,7 @@ function startBridge(config) {
       MC_USERNAME: config.username || "ZeroPulse",
       MC_VERSION: config.version || "",
       BRIDGE_PORT: String(config.bridgePort || 8765),
+      ZP_PAIR_CODE: (config.pairCode || "").toUpperCase(),
     },
     execPath: process.execPath,
     silent: true,
