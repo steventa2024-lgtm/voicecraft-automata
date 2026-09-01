@@ -29,23 +29,23 @@ export const Route = createFileRoute("/download")({
 const STEPS = [
   {
     icon: Download,
-    title: "1 · Download & unzip",
-    body: "Grab zeropulse-bridge.zip and extract it anywhere on the machine running Minecraft Java Edition.",
-  },
-  {
-    icon: Terminal,
-    title: "2 · Install & run",
-    body: "Run npm install then npm start. The bridge opens a local WebSocket server on port 8765.",
+    title: "1 · Download the companion",
+    body: "Choose Windows or macOS above, unzip the entire download, then open ZeroPulse Companion.",
   },
   {
     icon: Cpu,
-    title: "3 · Open to LAN",
-    body: "In Minecraft press Esc → Open to LAN, note the port, and set MC_PORT in the bridge .env file.",
+    title: "2 · Open Minecraft",
+    body: "Open a Java Edition world to LAN with cheats enabled and copy the port shown in chat.",
   },
   {
     icon: ShieldCheck,
-    title: "4 · Connect the dashboard",
-    body: "Hit Connect bridge in the dashboard. Traffic never leaves your machine — the browser talks to localhost only.",
+    title: "3 · Start the companion",
+    body: "Enter that LAN port and the pairing code from your dashboard, then press Start bridge.",
+  },
+  {
+    icon: Smartphone,
+    title: "4 · Speak from any device",
+    body: "Use Relay mode on desktop or mobile. Only send commands after the status says Connected.",
   },
 ];
 
@@ -113,23 +113,6 @@ function DownloadPage() {
         </div>
 
         <div className="glass mt-8 rounded-2xl p-6">
-          <h2 className="font-display text-base font-semibold">Quick start</h2>
-          <pre className="mt-3 overflow-auto rounded-xl border border-border/70 bg-background/70 p-4 font-mono text-xs leading-relaxed text-muted-foreground">
-            {`unzip zeropulse-bridge.zip && cd zeropulse-bridge
-npm install
-cp .env.example .env      # set MC_HOST / MC_PORT / MC_USERNAME
-# optional: ZP_PAIR_CODE=K7QM24  → control it from your phone
-npm start                 # ws://localhost:8765`}
-          </pre>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Add a pairing code and the bridge dials out to the ZeroPulse relay — switch the
-            dashboard to <span className="font-mono text-foreground">Relay (anywhere)</span>, enter
-            the same code, and you can speak build orders from your phone while Minecraft runs on
-            your PC. No port forwarding.
-          </p>
-        </div>
-
-        <div className="glass mt-8 rounded-2xl p-6">
           <h2 className="font-display text-base font-semibold">
             Desktop companion — no Node.js required
           </h2>
@@ -147,6 +130,15 @@ npm start                 # ws://localhost:8765`}
 5. Wait for “Minecraft connected”, then speak`}
           </pre>
           <a href="/downloads/zeropulse-bridge.zip" download className="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline"><Terminal className="size-4" /> Download source version (Node.js 18+)</a>
+        </div>
+
+        <div className="glass mt-8 rounded-2xl p-6">
+          <h2 className="font-display text-base font-semibold">Before you open it</h2>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <li><span className="text-foreground">Windows:</span> extract the full ZIP, then run <span className="font-mono text-primary">ZeroPulseCompanion.exe</span>.</li>
+            <li><span className="text-foreground">macOS:</span> extract the ZIP, then Control-click the app and choose Open. This preview build is unsigned.</li>
+            <li><span className="text-foreground">Phone/tablet:</span> install the dashboard from the browser; do not download the desktop ZIP to your phone.</li>
+          </ul>
         </div>
 
         <div className="glass mt-8 rounded-2xl p-6">
