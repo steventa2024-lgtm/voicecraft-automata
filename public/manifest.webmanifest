@@ -1,0 +1,14 @@
+{
+  "name": "ZeroPulse — Voice Minecraft Control",
+  "short_name": "ZeroPulse",
+  "description": "Speak build orders to your Minecraft bot from any device.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#07090f",
+  "theme_color": "#07090f",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}

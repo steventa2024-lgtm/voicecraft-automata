@@ -9,6 +9,9 @@ import {
   Mic,
   MicOff,
   Plug,
+  RefreshCw,
+  Smartphone,
+  Wifi,
   Send,
   Square,
   Trash2,
@@ -47,6 +50,8 @@ const TEMPLATES = [
   "Build me a large stone mansion",
   "Build a bridge",
   "Build a garden",
+  "Build a fortress",
+  "Build a stone watchtower",
   "Build a 6 floor quartz tower",
   "Construct a deepslate castle",
   "Build a stone fountain",
@@ -191,6 +196,8 @@ function Dashboard() {
             </button>
           </div>
         </div>
+
+        <ConnectionPanel bridge={bridge} />
 
         <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_1fr]">
           {/* Voice capture */}
@@ -360,6 +367,85 @@ function Dashboard() {
         </div>
       </main>
     </div>
+  );
+}
+
+function ConnectionPanel({ bridge }: { bridge: ReturnType<typeof useBridge> }) {
+  const { conn, setConnection, regenerateCode, connect } = bridge;
+  return (
+    <section className="glass mt-6 rounded-2xl p-5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Wifi className="size-4 text-primary" /> Connection
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Same network? Use the direct link. On mobile data? Use the hosted relay and pair with
+            the code below.
+          </p>
+        </div>
+        <div className="flex rounded-full border border-border bg-secondary/60 p-1 text-xs">
+          {(["local", "cloud"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setConnection({ transport: t })}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition ${
+                conn.transport === t
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t === "local" ? <Plug className="size-3.5" /> : <Smartphone className="size-3.5" />}
+              {t === "local" ? "Direct (LAN)" : "Relay (anywhere)"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+        {conn.transport === "local" ? (
+          <input
+            value={conn.url}
+            onChange={(e) => setConnection({ url: e.target.value })}
+            spellCheck={false}
+            placeholder="ws://localhost:8765"
+            className="h-11 rounded-xl border border-input bg-background/60 px-4 font-mono text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-ring/30"
+          />
+        ) : (
+          <div className="flex gap-2">
+            <input
+              value={conn.code}
+              onChange={(e) => setConnection({ code: e.target.value })}
+              spellCheck={false}
+              placeholder="PAIR CODE"
+              className="h-11 flex-1 rounded-xl border border-input bg-background/60 px-4 font-mono text-sm uppercase tracking-[0.3em] outline-none focus:border-primary/60 focus:ring-2 focus:ring-ring/30"
+            />
+            <button
+              onClick={regenerateCode}
+              title="Generate a new pairing code"
+              className="grid size-11 place-items-center rounded-xl border border-border bg-secondary transition hover:bg-muted"
+            >
+              <RefreshCw className="size-4" />
+            </button>
+          </div>
+        )}
+        <button
+          onClick={connect}
+          className="h-11 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground transition hover:bg-primary-glow"
+        >
+          Reconnect
+        </button>
+      </div>
+
+      {conn.transport === "cloud" ? (
+        <p className="mt-3 font-mono text-[11px] text-muted-foreground">
+          On the PC running Minecraft, start the companion with pairing code{" "}
+          <span className="text-primary">{conn.code || "——————"}</span> (Companion app → Pairing
+          code, or <span className="text-primary">ZP_PAIR_CODE={conn.code || "CODE"}</span> in the
+          bridge .env).
+        </p>
+      ) : null}
+    </section>
   );
 }
 

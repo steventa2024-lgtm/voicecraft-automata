@@ -12,6 +12,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "dotenv": "^16.4.5",
     "mineflayer": "^4.20.1",
     "prismarine-item": "^1.18.0",

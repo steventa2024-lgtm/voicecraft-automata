@@ -11,23 +11,48 @@ import mineflayer from "mineflayer";
 import { parseCommand } from "./parser.js";
 import { runBuild, clearArea } from "./builder.js";
 import { detectMode } from "./placer.js";
+import { startRelay, normalizeCode } from "./relay.js";
 
 const PORT = Number(process.env.BRIDGE_PORT || 8765);
 const MC_HOST = process.env.MC_HOST || "localhost";
 const MC_PORT = Number(process.env.MC_PORT || 25565);
 const MC_USERNAME = process.env.MC_USERNAME || "ZeroPulse";
 const MC_VERSION = process.env.MC_VERSION || undefined;
+const PAIR_CODE = normalizeCode(process.env.ZP_PAIR_CODE || "");
 
 let bot = null;
 let botReady = false;
 let currentJob = null;
 let placementMode = null;
+let relay = null;
 const clients = new Set();
 
 function broadcast(payload) {
   const msg = JSON.stringify(payload);
   for (const ws of clients) {
     if (ws.readyState === 1) ws.send(msg);
+  }
+  if (relay) relay.publish(payload);
+}
+
+function currentState(extra = {}) {
+  return {
+    type: "status",
+    status: botReady ? (currentJob && !currentJob.done ? "building" : "connected") : "idle",
+    mode: placementMode || undefined,
+    message: botReady ? "Bot online" : "Bridge online — waiting for Minecraft",
+    ...extra,
+  };
+}
+
+function handleRemotePayload(payload) {
+  if (!payload) return;
+  if (payload.type === "hello") {
+    if (relay) relay.publish(currentState());
+    return;
+  }
+  if (payload.type === "command") {
+    handleInstruction(payload.instruction ?? parseCommand(payload.text || ""));
   }
 }
 
@@ -182,14 +207,23 @@ wss.on("connection", (ws) => {
     } catch {
       return;
     }
-    if (payload.type === "command") {
-      const instruction = payload.instruction ?? parseCommand(payload.text || "");
-      handleInstruction(instruction);
-    }
+    handleRemotePayload(payload);
   });
 
   ws.on("close", () => clients.delete(ws));
 });
 
 console.log(`[zeropulse] bridge listening on ws://localhost:${PORT}`);
+
+if (PAIR_CODE) {
+  relay = startRelay({
+    code: PAIR_CODE,
+    onCommand: handleRemotePayload,
+    onStatus: (message) => log(message),
+  });
+  console.log(`[zeropulse] remote control enabled — pairing code ${PAIR_CODE}`);
+} else {
+  console.log("[zeropulse] remote control off — set ZP_PAIR_CODE to control from your phone");
+}
+
 createBot();

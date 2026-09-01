@@ -369,6 +369,108 @@ function genFountain(i) {
   return out;
 }
 
+function genFortress(i) {
+  const { width: w, depth: d } = i.dimensions;
+  const wallH = Math.max(8, Math.round(i.dimensions.height / 1.2));
+  const trim = TRIM[i.material] || i.material;
+  const out = [];
+  // moat ring
+  for (let x = -2; x < w + 2; x += 1) {
+    for (let z = -2; z < d + 2; z += 1) {
+      const outer = x < 0 || z < 0 || x >= w || z >= d;
+      if (outer) push(out, x, 0, z, "water");
+    }
+  }
+  // thick curtain wall (2 blocks deep) with walkway + crenellations
+  for (let x = 0; x < w; x += 1) {
+    for (let z = 0; z < d; z += 1) {
+      const ring = x <= 1 || z <= 1 || x >= w - 2 || z >= d - 2;
+      if (!ring) continue;
+      for (let y = 0; y < wallH; y += 1) push(out, x, y, z, i.material);
+      push(out, x, wallH, z, trim);
+      const edge = x === 0 || z === 0 || x === w - 1 || z === d - 1;
+      if (edge && (x + z) % 2 === 0) push(out, x, wallH + 1, z, i.material);
+    }
+  }
+  // corner bastions
+  const bastion = { ...i, dimensions: { width: 7, depth: 7, height: wallH + 6 } };
+  for (const [ox, oz] of [
+    [-1, -1],
+    [w - 6, -1],
+    [-1, d - 6],
+    [w - 6, d - 6],
+  ]) {
+    for (const p of genWatchtower(bastion)) push(out, p.x + ox, p.y, p.z + oz, p.block);
+  }
+  // gatehouse
+  const gx = Math.floor(w / 2);
+  for (const dx of [-1, 0, 1]) {
+    for (let y = 1; y <= 4; y += 1) {
+      push(out, gx + dx, y, 0, "air");
+      push(out, gx + dx, y, 1, "air");
+    }
+  }
+  push(out, gx - 2, wallH + 1, 0, "lantern");
+  push(out, gx + 2, wallH + 1, 0, "lantern");
+  // inner keep
+  const keepW = Math.max(7, Math.floor(w / 3));
+  const keepD = Math.max(7, Math.floor(d / 3));
+  const kx = Math.floor((w - keepW) / 2);
+  const kz = Math.floor((d - keepD) / 2);
+  box(out, kx, 0, kz, keepW, 7, keepD, i.material, { hollow: true, skipTop: true });
+  gabledRoof(out, keepW, keepD, 7, ROOF[i.material] || "stone_brick_stairs");
+  push(out, kx + Math.floor(keepW / 2), 1, kz, "air");
+  push(out, kx + Math.floor(keepW / 2), 2, kz, "air");
+  // courtyard torches
+  for (let x = 3; x < w - 3; x += 6)
+    for (let z = 3; z < d - 3; z += 6) push(out, x, 1, z, "lantern");
+  return out;
+}
+
+function genWatchtower(i) {
+  const w = Math.max(5, i.dimensions.width);
+  const d = Math.max(5, i.dimensions.depth);
+  const h = Math.max(12, i.dimensions.height);
+  const trim = TRIM[i.material] || i.material;
+  const stairs = ROOF[i.material] || "stone_brick_stairs";
+  const out = [];
+  // solid footing
+  box(out, -1, 0, -1, w + 2, 1, d + 2, trim, { hollow: false });
+  // shaft
+  box(out, 0, 1, 0, w, h, d, i.material, { hollow: true, skipTop: true });
+  // ladder up the inside north wall
+  for (let y = 1; y < h; y += 1) push(out, 1, y, 1, "ladder");
+  // slit windows every 3 blocks
+  for (let y = 4; y < h - 2; y += 3) {
+    push(out, Math.floor(w / 2), y, 0, "glass_pane");
+    push(out, Math.floor(w / 2), y, d - 1, "glass_pane");
+    push(out, 0, y, Math.floor(d / 2), "glass_pane");
+    push(out, w - 1, y, Math.floor(d / 2), "glass_pane");
+  }
+  // overhanging lookout deck
+  const deckY = h;
+  for (let x = -1; x <= w; x += 1) {
+    for (let z = -1; z <= d; z += 1) {
+      push(out, x, deckY, z, i.material);
+      const rim = x === -1 || z === -1 || x === w || z === d;
+      if (rim) {
+        push(out, x, deckY + 1, z, "oak_fence");
+        if ((x + z) % 2 === 0) push(out, x, deckY + 2, z, trim);
+      }
+    }
+  }
+  // roof cap + beacon light
+  gabledRoof(out, w + 2, d + 2, deckY + 3, stairs);
+  const cx = Math.floor(w / 2);
+  const cz = Math.floor(d / 2);
+  push(out, cx, deckY + 1, cz, "glowstone");
+  push(out, cx, deckY + 2, cz, "lantern");
+  // door
+  push(out, cx, 1, 0, "air");
+  push(out, cx, 2, 0, "air");
+  return out;
+}
+
 const GENERATORS = {
   house: genHouse,
   mansion: genMansion,
@@ -380,6 +482,8 @@ const GENERATORS = {
   farm: genFarm,
   garden: genGarden,
   fountain: genFountain,
+  fortress: genFortress,
+  watchtower: genWatchtower,
 };
 
 
