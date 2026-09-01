@@ -48,10 +48,15 @@ export function openRelay(code: string, handlers: RelayHandlers): RelayHandle {
 
   channel.on("broadcast", { event: "evt" }, ({ payload }) => handlers.onEvent(payload));
 
+  let heartbeat: ReturnType<typeof setInterval> | null = null;
+  const announce = () =>
+    channel.send({ type: "broadcast", event: "cmd", payload: { type: "hello" } });
+
   channel.subscribe((status) => {
     if (status === "SUBSCRIBED") {
       handlers.onOpen();
-      channel.send({ type: "broadcast", event: "cmd", payload: { type: "hello" } });
+      announce();
+      heartbeat = setInterval(announce, 3_000);
     } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
       handlers.onError("Relay channel error — check your connection and pairing code");
     }
@@ -62,6 +67,7 @@ export function openRelay(code: string, handlers: RelayHandlers): RelayHandle {
       channel.send({ type: "broadcast", event: "cmd", payload });
     },
     close: () => {
+      if (heartbeat) clearInterval(heartbeat);
       supabase.removeChannel(channel);
     },
   };

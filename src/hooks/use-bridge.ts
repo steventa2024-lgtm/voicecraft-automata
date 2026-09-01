@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { BuildInstruction } from "@/lib/command-parser";
 import { makePairCode, normalizeCode, openRelay, type RelayHandle } from "@/lib/relay";
 
-export type BridgeStatus = "idle" | "connecting" | "connected" | "building" | "error";
+export type BridgeStatus = "idle" | "connecting" | "bridge" | "connected" | "building" | "error";
 export type TransportKind = "local" | "cloud";
 
 export interface BridgeEvent {
@@ -73,7 +73,7 @@ export function useBridge() {
 
   const applyEvent = useCallback(
     (data: BridgeEvent) => {
-      if (data.status) setStatus(data.status);
+      if (data.status) setStatus(data.status === "idle" ? "bridge" : data.status);
       if (data.mode) setMode(data.mode);
       if (data.result) {
         push(
@@ -109,8 +109,8 @@ export function useBridge() {
       push(`Joining relay channel ${code}`, "info");
       relayRef.current = openRelay(code, {
         onOpen: () => {
-          setStatus("connected");
-          push("Relay joined — waiting for your bridge to answer", "success");
+          setStatus("connecting");
+          push("Relay ready — waiting for the companion app", "info");
         },
         onEvent: (payload) => applyEvent(payload as BridgeEvent),
         onError: (message) => {
@@ -126,8 +126,8 @@ export function useBridge() {
       const ws = new WebSocket(conn.url);
       socketRef.current = ws;
       ws.onopen = () => {
-        setStatus("connected");
-        push("Bridge online — Mineflayer bot attached", "success");
+        setStatus("bridge");
+        push("Companion found — checking Minecraft connection", "success");
       };
       ws.onmessage = (ev) => {
         try {
@@ -176,7 +176,7 @@ export function useBridge() {
   const send = useCallback(
     (instruction: BuildInstruction) => {
       const payload = { type: "command", instruction };
-      if (relayRef.current && status !== "idle") {
+      if (relayRef.current && (status === "connected" || status === "building")) {
         relayRef.current.send(payload);
         push(`Relayed → ${instruction.action} ${instruction.structure}`, "success");
         return true;
@@ -187,7 +187,7 @@ export function useBridge() {
         push(`Dispatched → ${instruction.action} ${instruction.structure}`, "success");
         return true;
       }
-      push("No bridge connection — running local simulation", "warn");
+       push("Command not sent — connect the companion and Minecraft first", "warn");
       return false;
     },
     [push, status],

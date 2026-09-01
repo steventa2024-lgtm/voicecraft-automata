@@ -22,7 +22,7 @@
       h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: -0.02em; }
       p.sub { margin: 0 0 20px; color: var(--muted); }
       .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; backdrop-filter: blur(12px); }
-      .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+      .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
       label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
       input {
         width: 100%; height: 36px; padding: 0 10px; border-radius: 9px; color: var(--text);
@@ -90,7 +90,7 @@
           pairCode: $("pairCode").value.trim().toUpperCase(),
         });
       $("stop").onclick = () => window.companion.stop();
-      $("dash").onclick = () => window.companion.openDashboard("https://zeropulse.lovable.app/dashboard");
+      $("dash").onclick = () => window.companion.openDashboard("https://project--39d2951c-8adb-440f-b598-47437cb660b0.lovable.app/dashboard");
     </script>
   </body>
 </html>

@@ -63,7 +63,8 @@ const TEMPLATES = [
 
 const STATUS_META: Record<BridgeStatus, { label: string; dot: string; text: string }> = {
   idle: { label: "Idle", dot: "bg-muted-foreground", text: "text-muted-foreground" },
-  connecting: { label: "Connecting", dot: "bg-warning animate-pulse", text: "text-warning" },
+  connecting: { label: "Waiting for companion", dot: "bg-warning animate-pulse", text: "text-warning" },
+  bridge: { label: "Companion online · Minecraft offline", dot: "bg-warning", text: "text-warning" },
   connected: { label: "Connected", dot: "bg-success", text: "text-success" },
   building: { label: "Building", dot: "bg-primary animate-pulse", text: "text-primary" },
   error: { label: "Error", dot: "bg-destructive", text: "text-destructive" },
@@ -83,7 +84,6 @@ function Dashboard() {
   const [transcript, setTranscript] = useState("");
   const [draft, setDraft] = useState("");
   const [log, setLog] = useState<LogRow[]>([]);
-  const [simProgress, setSimProgress] = useState(0);
   const recognitionRef = useRef<any>(null);
   const rowId = useRef(0);
 
@@ -108,22 +108,12 @@ function Dashboard() {
           ...prev,
         ].slice(0, 40),
       );
-      const live = bridge.send(instruction);
-      if (!live && instruction.action === "build") {
-        setSimProgress(1);
-      }
+      bridge.send(instruction);
       setDraft("");
       setTranscript("");
     },
     [bridge],
   );
-
-  // Local simulation so the dashboard is demonstrable without the bridge running.
-  useEffect(() => {
-    if (simProgress <= 0 || simProgress >= 100) return;
-    const t = setTimeout(() => setSimProgress((p) => Math.min(100, p + 4)), 90);
-    return () => clearTimeout(t);
-  }, [simProgress]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -164,7 +154,7 @@ function Dashboard() {
     }
   };
 
-  const activeProgress = bridge.progress || simProgress;
+  const activeProgress = bridge.progress;
 
   return (
     <div className="min-h-screen grid-backdrop">
@@ -288,7 +278,6 @@ function Dashboard() {
             </div>
             <button
               onClick={() => {
-                setSimProgress(0);
                 dispatch("stop");
               }}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/40 px-4 py-2.5 text-sm font-medium text-destructive transition hover:bg-destructive/10"
@@ -380,8 +369,8 @@ function ConnectionPanel({ bridge }: { bridge: ReturnType<typeof useBridge> }) {
             <Wifi className="size-4 text-primary" /> Connection
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Same network? Use the direct link. On mobile data? Use the hosted relay and pair with
-            the code below.
+            Direct connects this browser to the PC. Relay waits for the companion app using the
+            same pairing code; joining the relay alone does not mean Minecraft is connected.
           </p>
         </div>
         <div className="flex rounded-full border border-border bg-secondary/60 p-1 text-xs">
