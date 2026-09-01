@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, Terminal, ShieldCheck, Cpu, Monitor, Smartphone, Apple } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import windowsCompanion from "@/assets/zeropulse-windows.zip.asset.json";
+import macCompanion from "@/assets/zeropulse-macos.zip.asset.json";
 
 export const Route = createFileRoute("/download")({
   head: () => ({
@@ -52,13 +54,13 @@ const DESKTOP_DOWNLOADS = [
     icon: Monitor,
     title: "Windows companion",
     detail: "Windows 10/11 · x64 · no Node.js required",
-    href: "/downloads/ZeroPulseCompanion-win32-x64.zip",
+    href: windowsCompanion.url,
   },
   {
     icon: Apple,
     title: "macOS companion",
     detail: "Intel Mac · ZIP archive · no Node.js required",
-    href: "/downloads/ZeroPulseCompanion-darwin-x64.zip",
+    href: macCompanion.url,
   },
 ];
 
