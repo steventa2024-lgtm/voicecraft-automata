@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Terminal, ShieldCheck, Cpu } from "lucide-react";
+import { Download, Terminal, ShieldCheck, Cpu, Monitor, Smartphone, Apple } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -47,6 +47,21 @@ const STEPS = [
   },
 ];
 
+const DESKTOP_DOWNLOADS = [
+  {
+    icon: Monitor,
+    title: "Windows companion",
+    detail: "Windows 10/11 · x64 · no Node.js required",
+    href: "/downloads/ZeroPulseCompanion-win32-x64.zip",
+  },
+  {
+    icon: Apple,
+    title: "macOS companion",
+    detail: "Intel Mac · ZIP archive · no Node.js required",
+    href: "/downloads/ZeroPulseCompanion-darwin-x64.zip",
+  },
+];
+
 function DownloadPage() {
   return (
     <div className="min-h-screen hero-aura">
@@ -56,27 +71,33 @@ function DownloadPage() {
           Install the <span className="text-gradient">local bridge</span>
         </h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
-          The bridge is a small Node.js companion. It hosts a WebSocket server for the dashboard and
-          drives a Mineflayer bot that places blocks inside your world.
+            The companion connects your dashboard to Minecraft Java and places blocks with a
+            Mineflayer bot. Download the desktop app below, start it beside your game, then pair the
+            dashboard.
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <a
-            href="/downloads/zeropulse-bridge.zip"
-            download
-            className="glow-ring inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-medium text-primary-foreground transition hover:bg-primary-glow"
-          >
-            <Download className="size-4" /> Download bridge (.zip)
-          </a>
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-2 rounded-xl border border-border px-6 py-3.5 font-medium transition hover:bg-secondary"
-          >
-            Open dashboard
-          </Link>
-        </div>
-        <p className="mt-3 font-mono text-xs text-muted-foreground">
-          Requires Node.js 18+ · Minecraft Java Edition 1.20+ · Windows, macOS, Linux
+        <section className="mt-8 grid gap-4 sm:grid-cols-2">
+          {DESKTOP_DOWNLOADS.map((item) => (
+            <a key={item.title} href={item.href} download className="glass group rounded-2xl p-5 transition hover:border-primary/50">
+              <item.icon className="size-6 text-primary" />
+              <h2 className="mt-4 font-display text-lg font-semibold">{item.title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
+              <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary">
+                <Download className="size-4" /> Download ZIP
+              </span>
+            </a>
+          ))}
+        </section>
+
+        <section className="glass mt-5 flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 font-display font-semibold"><Smartphone className="size-5 text-accent" /> iPhone & Android controller</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Open the dashboard in Safari or Chrome, then choose Add to Home Screen / Install app.</p>
+          </div>
+          <Link to="/dashboard" className="shrink-0 rounded-xl bg-primary px-5 py-3 text-center text-sm font-medium text-primary-foreground transition hover:bg-primary-glow">Open mobile dashboard</Link>
+        </section>
+        <p className="mt-3 text-xs text-muted-foreground">
+          A phone can be the voice controller. Minecraft Java and the companion must still run on a Windows/Mac/Linux computer or hosted game server; iOS and Android cannot run a Mineflayer Java bridge locally.
         </p>
 
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
@@ -111,19 +132,19 @@ npm start                 # ws://localhost:8765`}
             Desktop companion — no Node.js required
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            The ZeroPulse Companion wraps the same bridge in a desktop app that ships its own
-            runtime. Launch it, fill in your LAN port, press{" "}
-            <span className="font-mono text-foreground">Start bridge</span>, and the dashboard
-            connects automatically. Windows x64 and macOS builds are produced from this repo with{" "}
-            <span className="font-mono text-foreground">./desktop/build.sh</span> — they are ~160 MB
-            (Windows) and ~390 MB (macOS) because the Electron runtime and the full Minecraft
-            protocol dataset are bundled, so they are distributed as release artifacts rather than
-            from this page.
+            Unzip the download, open ZeroPulse Companion, enter the LAN port shown by Minecraft,
+            copy the dashboard pairing code into the app, then press Start bridge. Keep the app
+            running while you issue commands. The source-code ZIP remains available for Linux and
+            advanced users.
           </p>
           <pre className="mt-3 overflow-auto rounded-xl border border-border/70 bg-background/70 p-4 font-mono text-xs leading-relaxed text-muted-foreground">
-            {`./desktop/build.sh                        # Windows x64 + macOS x64
-PLATFORMS=darwin ARCH=arm64 ./desktop/build.sh   # Apple Silicon`}
+            {`1. Minecraft Java → Esc → Open to LAN → Allow Cheats: ON
+2. Open ZeroPulse Companion and enter the LAN port
+3. Dashboard → Relay (anywhere) → copy its pairing code
+4. Paste the same code into Companion → Start bridge
+5. Wait for “Minecraft connected”, then speak`}
           </pre>
+          <a href="/downloads/zeropulse-bridge.zip" download className="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline"><Terminal className="size-4" /> Download source version (Node.js 18+)</a>
         </div>
 
         <div className="glass mt-8 rounded-2xl p-6">
