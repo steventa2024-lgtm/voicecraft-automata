@@ -12,6 +12,8 @@ export type StructureKind =
   | "wall"
   | "pyramid"
   | "farm"
+  | "garden"
+  | "fountain"
   | "unknown";
 
 export interface BuildInstruction {
@@ -34,6 +36,8 @@ const STRUCTURES: Array<[StructureKind, string[]]> = [
   ["wall", ["wall", "perimeter", "fence"]],
   ["pyramid", ["pyramid", "tomb"]],
   ["farm", ["farm", "field", "crops"]],
+  ["garden", ["garden", "park", "flower", "orchard"]],
+  ["fountain", ["fountain", "pond", "water feature"]],
   ["house", ["house", "hut", "cabin", "cottage", "home", "shack"]],
 ];
 
@@ -57,6 +61,8 @@ const BASE_SIZE: Record<StructureKind, [number, number, number, number]> = {
   wall: [21, 1, 5, 1],
   pyramid: [21, 21, 11, 1],
   farm: [13, 13, 1, 1],
+  garden: [15, 15, 2, 1],
+  fountain: [11, 11, 5, 1],
   unknown: [9, 9, 4, 1],
 };
 
@@ -137,6 +143,8 @@ export function estimateBlocks(i: BuildInstruction): number {
   if (i.structure === "pyramid") return Math.round((width * depth * height) / 3);
   if (i.structure === "wall") return width * height;
   if (i.structure === "farm") return width * depth * 2;
+  if (i.structure === "garden") return Math.round(width * depth * 1.6);
+  if (i.structure === "fountain") return Math.round(width * depth * 1.8);
   const shell = 2 * (width + depth) * height + width * depth * (i.floors + 1);
   return Math.round(shell);
 }

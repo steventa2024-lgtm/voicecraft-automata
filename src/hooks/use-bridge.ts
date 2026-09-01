@@ -4,7 +4,9 @@ import type { BuildInstruction } from "@/lib/command-parser";
 export type BridgeStatus = "idle" | "connecting" | "connected" | "building" | "error";
 
 export interface BridgeEvent {
-  type: "status" | "log" | "progress" | "error";
+  type: "status" | "log" | "progress" | "error" | "mode";
+  mode?: string;
+  result?: { placed: number; mode: string; origin: { x: number; y: number; z: number } };
   status?: Exclude<BridgeStatus, "connecting">;
   message?: string;
   progress?: number;
@@ -15,6 +17,7 @@ const DEFAULT_URL = "ws://localhost:8765";
 /** Talks to the locally-installed ZeroPulse bridge over WebSocket. */
 export function useBridge(url: string = DEFAULT_URL) {
   const [status, setStatus] = useState<BridgeStatus>("idle");
+  const [mode, setMode] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [events, setEvents] = useState<Array<{ id: number; text: string; kind: string }>>([]);
   const socketRef = useRef<WebSocket | null>(null);
@@ -41,6 +44,13 @@ export function useBridge(url: string = DEFAULT_URL) {
         try {
           const data = JSON.parse(ev.data as string) as BridgeEvent;
           if (data.status) setStatus(data.status);
+          if (data.mode) setMode(data.mode);
+          if (data.result) {
+            push(
+              `Placed ${data.result.placed} blocks at ${data.result.origin.x}, ${data.result.origin.y}, ${data.result.origin.z} (${data.result.mode} mode)`,
+              "success",
+            );
+          }
           if (typeof data.progress === "number") setProgress(data.progress);
           if (data.message) push(data.message, data.type === "error" ? "error" : "info");
         } catch {
@@ -82,7 +92,12 @@ export function useBridge(url: string = DEFAULT_URL) {
     [push],
   );
 
-  useEffect(() => () => socketRef.current?.close(), []);
+  // Attach to the local companion as soon as the dashboard mounts.
+  useEffect(() => {
+    connect();
+    return () => socketRef.current?.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  return { status, progress, setProgress, events, push, connect, disconnect, send };
+  return { status, mode, progress, setProgress, events, push, connect, disconnect, send };
 }

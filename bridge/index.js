@@ -10,6 +10,7 @@ import { WebSocketServer } from "ws";
 import mineflayer from "mineflayer";
 import { parseCommand } from "./parser.js";
 import { runBuild, clearArea } from "./builder.js";
+import { detectMode } from "./placer.js";
 
 const PORT = Number(process.env.BRIDGE_PORT || 8765);
 const MC_HOST = process.env.MC_HOST || "localhost";
@@ -20,6 +21,7 @@ const MC_VERSION = process.env.MC_VERSION || undefined;
 let bot = null;
 let botReady = false;
 let currentJob = null;
+let placementMode = null;
 const clients = new Set();
 
 function broadcast(payload) {
@@ -46,10 +48,22 @@ function createBot() {
     auth: process.env.MC_AUTH || "offline",
   });
 
-  bot.once("spawn", () => {
+  bot.once("spawn", async () => {
     botReady = true;
     log("Bot spawned in world — ready for build orders");
     broadcast({ type: "status", status: "connected" });
+    try {
+      placementMode = await detectMode(bot);
+      log(
+        placementMode === "command"
+          ? "Operator rights detected — using /fill placement (fast)"
+          : "No operator rights — using creative hand placement",
+      );
+      broadcast({ type: "mode", mode: placementMode });
+    } catch (err) {
+      placementMode = "creative";
+      log(`Placement probe failed (${err.message}) — defaulting to hand placement`);
+    }
   });
 
   bot.on("kicked", (reason) => {
@@ -117,16 +131,27 @@ async function handleInstruction(instruction) {
     broadcast({ type: "progress", progress: Math.round((placed / total) * 100) });
 
   try {
-    if (instruction.action === "clear") {
-      await clearArea(bot, instruction, job, onProgress);
-    } else {
-      await runBuild(bot, instruction, job, onProgress);
+    const result =
+      instruction.action === "clear"
+        ? await clearArea(bot, instruction, job, onProgress, placementMode)
+        : await runBuild(bot, instruction, job, onProgress, placementMode);
+
+    const where = result?.origin
+      ? ` at ${result.origin.x}, ${result.origin.y}, ${result.origin.z}`
+      : "";
+    if (!job.cancelled && result?.origin) {
+      bot.chat(
+        `ZeroPulse: ${instruction.structure} finished${where} (${result.placed} blocks, ${result.mode} mode)`,
+      );
     }
     broadcast({
       type: "status",
       status: "connected",
-      message: job.cancelled ? "Build cancelled" : `${instruction.structure} complete`,
+      message: job.cancelled
+        ? "Build cancelled"
+        : `${instruction.structure} complete — ${result.placed} blocks${where}`,
       progress: job.cancelled ? 0 : 100,
+      result: job.cancelled ? undefined : { ...result, structure: instruction.structure },
     });
   } catch (err) {
     broadcast({ type: "error", status: "error", message: `Build failed: ${err.message}` });

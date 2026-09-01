@@ -63,3 +63,19 @@ zp stop
 Add a generator to `builder.js` returning `{ x, y, z, block }` in local coordinates, register it
 in `GENERATORS`, and add its keywords to `STRUCTURES` in `parser.js` (and in the web app's
 `src/lib/command-parser.ts`).
+
+## Placement modes
+
+On spawn the bridge probes for operator rights:
+
+- **command** — `/fill` + `/setblock` (fast, exact). Requires op / cheats.
+- **creative** — real hand placement: creative-inventory hotbar load, fly to the
+  target, `bot.placeBlock()` against a neighbouring face. Works without op.
+
+Override with `PLACEMENT_MODE=command|creative`. Use `DISABLE_FILL=1` on servers
+that block `/fill`. Builds are grounded on the terrain in front of the bot and the
+finish coordinates are chatted in-game and streamed back to the dashboard.
+
+## Structures
+
+house · mansion · tower · castle · pyramid · bridge · wall · farm · garden · fountain

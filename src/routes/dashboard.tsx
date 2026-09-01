@@ -45,10 +45,14 @@ export const Route = createFileRoute("/dashboard")({
 
 const TEMPLATES = [
   "Build me a large stone mansion",
+  "Build a bridge",
+  "Build a garden",
   "Build a 6 floor quartz tower",
   "Construct a deepslate castle",
+  "Build a stone fountain",
   "Make a small oak house",
   "Build a sandstone pyramid",
+  "Build a wheat farm",
   "Clear the area in front of me",
 ];
 
@@ -173,6 +177,11 @@ function Dashboard() {
               <span className={`size-2 rounded-full ${meta.dot}`} />
               <span className={meta.text}>{meta.label}</span>
             </span>
+            {bridge.mode ? (
+              <span className="glass rounded-full px-3.5 py-2 font-mono text-xs text-muted-foreground">
+                {bridge.mode === "command" ? "/fill placement" : "hand placement"}
+              </span>
+            ) : null}
             <button
               onClick={bridge.status === "idle" ? bridge.connect : bridge.disconnect}
               className="flex items-center gap-2 rounded-full border border-border bg-secondary px-3.5 py-2 text-xs font-medium transition hover:bg-muted"
