@@ -69,7 +69,7 @@ export function parseCommand(input) {
   const materialEntry = MATERIALS.find(([, words]) => words.some((w) => text.includes(w)));
   const material = materialEntry
     ? materialEntry[0]
-    : kind === "castle" || kind === "tower"
+    : kind === "castle" || kind === "tower" || kind === "fortress" || kind === "watchtower"
       ? "stone_bricks"
       : "oak_planks";
 
