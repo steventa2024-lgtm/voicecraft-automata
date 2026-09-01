@@ -419,9 +419,6 @@ function genFortress(i) {
   const kz = Math.floor((d - keepD) / 2);
   box(out, kx, 0, kz, keepW, 7, keepD, i.material, { hollow: true, skipTop: true });
   gabledRoof(out, keepW, keepD, 7, ROOF[i.material] || "stone_brick_stairs");
-  for (let x = 0; x < keepW; x += 1)
-    for (let z = 0; z < keepD; z += 1)
-      if (x !== 0 && z !== 0 && x !== keepW - 1 && z !== keepD - 1) continue;
   push(out, kx + Math.floor(keepW / 2), 1, kz, "air");
   push(out, kx + Math.floor(keepW / 2), 2, kz, "air");
   // courtyard torches

@@ -22,6 +22,13 @@ export function SiteHeader() {
             Dashboard
           </Link>
           <Link
+            to="/world-setup"
+            className="rounded-md px-3 py-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+            activeProps={{ className: "text-foreground" }}
+          >
+            World setup
+          </Link>
+          <Link
             to="/download"
             className="rounded-md bg-primary px-3.5 py-2 font-medium text-primary-foreground transition hover:bg-primary-glow"
           >
