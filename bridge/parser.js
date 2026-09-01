@@ -5,7 +5,9 @@
 
 const STRUCTURES = [
   ["mansion", ["mansion", "manor", "estate"]],
-  ["castle", ["castle", "fortress", "keep"]],
+  ["fortress", ["fortress", "stronghold", "bastion", "citadel"]],
+  ["castle", ["castle", "keep", "palace"]],
+  ["watchtower", ["watchtower", "watch tower", "lookout", "guard tower", "beacon tower"]],
   ["tower", ["tower", "spire", "lighthouse"]],
   ["bridge", ["bridge", "walkway"]],
   ["wall", ["wall", "perimeter", "fence"]],
@@ -29,6 +31,8 @@ const MATERIALS = [
 const BASE_SIZE = {
   mansion: [21, 15, 5, 2],
   castle: [25, 25, 8, 1],
+  fortress: [31, 31, 10, 1],
+  watchtower: [7, 7, 5, 4],
   tower: [7, 7, 4, 6],
   house: [9, 7, 4, 1],
   bridge: [25, 5, 4, 1],

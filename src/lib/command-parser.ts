@@ -8,6 +8,8 @@ export type StructureKind =
   | "house"
   | "tower"
   | "castle"
+  | "fortress"
+  | "watchtower"
   | "bridge"
   | "wall"
   | "pyramid"
@@ -30,7 +32,9 @@ export interface BuildInstruction {
 
 const STRUCTURES: Array<[StructureKind, string[]]> = [
   ["mansion", ["mansion", "manor", "estate"]],
-  ["castle", ["castle", "fortress", "keep"]],
+  ["fortress", ["fortress", "stronghold", "bastion", "citadel"]],
+  ["castle", ["castle", "keep", "palace"]],
+  ["watchtower", ["watchtower", "watch tower", "lookout", "guard tower", "beacon tower"]],
   ["tower", ["tower", "spire", "lighthouse"]],
   ["bridge", ["bridge", "walkway"]],
   ["wall", ["wall", "perimeter", "fence"]],
@@ -55,6 +59,8 @@ const BASE_SIZE: Record<StructureKind, [number, number, number, number]> = {
   // width, depth, height-per-floor, floors
   mansion: [21, 15, 5, 2],
   castle: [25, 25, 8, 1],
+  fortress: [31, 31, 10, 1],
+  watchtower: [7, 7, 5, 4],
   tower: [7, 7, 4, 6],
   house: [9, 7, 4, 1],
   bridge: [25, 5, 4, 1],
@@ -89,7 +95,9 @@ export function parseCommand(input: string): BuildInstruction {
 
   const material =
     MATERIALS.find(([, words]) => words.some((w) => text.includes(w)))?.[0] ??
-    (kind === "castle" || kind === "tower" ? "stone_bricks" : "oak_planks");
+    (kind === "castle" || kind === "tower" || kind === "fortress" || kind === "watchtower"
+      ? "stone_bricks"
+      : "oak_planks");
 
   const size: BuildInstruction["size"] = /\b(huge|giant|massive|large|big|epic)\b/.test(text)
     ? "large"
@@ -145,6 +153,8 @@ export function estimateBlocks(i: BuildInstruction): number {
   if (i.structure === "farm") return width * depth * 2;
   if (i.structure === "garden") return Math.round(width * depth * 1.6);
   if (i.structure === "fountain") return Math.round(width * depth * 1.8);
+  if (i.structure === "fortress") return Math.round(2 * (width + depth) * height * 1.4);
+  if (i.structure === "watchtower") return Math.round(2 * (width + depth) * height + width * depth * 2);
   const shell = 2 * (width + depth) * height + width * depth * (i.floors + 1);
   return Math.round(shell);
 }
