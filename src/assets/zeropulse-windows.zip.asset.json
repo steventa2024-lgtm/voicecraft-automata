@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "asset_id": "ad1d3af6-6201-486b-b9f0-a5f594d5cce7",
+  "asset_id": "5d68c65c-7cf5-4d39-a311-145c656b1771",
   "project_id": "39d2951c-8adb-440f-b598-47437cb660b0",
-  "url": "/__l5e/assets-v1/ad1d3af6-6201-486b-b9f0-a5f594d5cce7/ZeroPulseCompanion-win32-x64.zip",
-  "r2_key": "a/v1/39d2951c-8adb-440f-b598-47437cb660b0/ad1d3af6-6201-486b-b9f0-a5f594d5cce7/ZeroPulseCompanion-win32-x64.zip",
+  "url": "/__l5e/assets-v1/5d68c65c-7cf5-4d39-a311-145c656b1771/ZeroPulseCompanion-win32-x64.zip",
+  "r2_key": "a/v1/39d2951c-8adb-440f-b598-47437cb660b0/5d68c65c-7cf5-4d39-a311-145c656b1771/ZeroPulseCompanion-win32-x64.zip",
   "original_filename": "ZeroPulseCompanion-win32-x64.zip",
-  "size": 170385735,
+  "size": 170385814,
   "content_type": "application/zip",
-  "created_at": "2026-09-01T02:55:47Z"
+  "created_at": "2026-09-01T02:59:20Z"
 }
