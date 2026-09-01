@@ -1,0 +1,12 @@
+{
+  "name": "zeropulse-companion",
+  "productName": "ZeroPulse Companion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Desktop companion that runs the ZeroPulse bridge and drives your Minecraft bot.",
+  "main": "main.cjs",
+  "author": "ZeroPulse",
+  "scripts": {
+    "start": "electron ."
+  }
+}

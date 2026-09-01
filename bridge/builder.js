@@ -6,6 +6,7 @@
  * and places them one at a time via the Mineflayer creative API.
  */
 import { Vec3 } from "vec3";
+import { placeBlocks } from "./placer.js";
 
 const TRIM = {
   stone_bricks: "chiseled_stone_bricks",
@@ -267,6 +268,107 @@ function genFarm(i) {
   return out;
 }
 
+function genGarden(i) {
+  const { width: w, depth: d } = i.dimensions;
+  const out = [];
+  const cx = Math.floor(w / 2);
+  const cz = Math.floor(d / 2);
+  const flowers = ["poppy", "dandelion", "blue_orchid", "allium", "cornflower", "oxeye_daisy"];
+
+  for (let x = 0; x < w; x += 1) {
+    for (let z = 0; z < d; z += 1) {
+      const edge = x === 0 || z === 0 || x === w - 1 || z === d - 1;
+      const path = x === cx || z === cz;
+      if (edge) {
+        push(out, x, 0, z, "cobblestone");
+        push(out, x, 1, z, "oak_fence");
+        continue;
+      }
+      if (path) {
+        push(out, x, 0, z, "gravel");
+        continue;
+      }
+      push(out, x, 0, z, "grass_block");
+      if ((x + z) % 2 === 0) {
+        push(out, x, 1, z, flowers[(x * 7 + z * 3) % flowers.length]);
+      } else if ((x * z) % 11 === 0) {
+        push(out, x, 1, z, "oak_leaves");
+      }
+    }
+  }
+
+  // central pond + lantern posts on the corners of the crossing paths
+  for (const [dx, dz] of [
+    [-1, -1],
+    [-1, 0],
+    [0, -1],
+    [0, 0],
+  ]) {
+    push(out, cx + dx, 0, cz + dz, "water");
+  }
+  for (const [dx, dz] of [
+    [-2, -2],
+    [2, -2],
+    [-2, 2],
+    [2, 2],
+  ]) {
+    push(out, cx + dx, 1, cz + dz, "oak_fence");
+    push(out, cx + dx, 2, cz + dz, "lantern");
+  }
+
+  // small trees in the quadrants
+  for (const [tx, tz] of [
+    [2, 2],
+    [w - 3, 2],
+    [2, d - 3],
+    [w - 3, d - 3],
+  ]) {
+    for (let y = 1; y <= 4; y += 1) push(out, tx, y, tz, "oak_log");
+    for (let dx = -2; dx <= 2; dx += 1) {
+      for (let dz = -2; dz <= 2; dz += 1) {
+        if (Math.abs(dx) + Math.abs(dz) > 3) continue;
+        push(out, tx + dx, 4, tz + dz, "oak_leaves");
+        if (Math.abs(dx) + Math.abs(dz) <= 1) push(out, tx + dx, 5, tz + dz, "oak_leaves");
+      }
+    }
+  }
+  return out;
+}
+
+function genFountain(i) {
+  const { width: w } = i.dimensions;
+  const r = Math.max(3, Math.floor(w / 2));
+  const cx = r;
+  const cz = r;
+  const out = [];
+  const trim = TRIM[i.material] || i.material;
+
+  for (let x = 0; x <= r * 2; x += 1) {
+    for (let z = 0; z <= r * 2; z += 1) {
+      const dist = Math.hypot(x - cx, z - cz);
+      if (dist > r) continue;
+      if (dist > r - 1) {
+        push(out, x, 0, z, trim);
+        push(out, x, 1, z, i.material);
+      } else {
+        push(out, x, 0, z, i.material);
+        push(out, x, 1, z, "water");
+      }
+    }
+  }
+  for (let y = 1; y <= 3; y += 1) push(out, cx, y, cz, i.material);
+  push(out, cx, 4, cz, "water");
+  for (const [dx, dz] of [
+    [-r, -r],
+    [r, -r],
+    [-r, r],
+    [r, r],
+  ]) {
+    push(out, cx + Math.round(dx * 0.7), 2, cz + Math.round(dz * 0.7), "lantern");
+  }
+  return out;
+}
+
 const GENERATORS = {
   house: genHouse,
   mansion: genMansion,
@@ -276,7 +378,10 @@ const GENERATORS = {
   bridge: genBridge,
   wall: genWall,
   farm: genFarm,
+  garden: genGarden,
+  fountain: genFountain,
 };
+
 
 export function planBuild(instruction) {
   const gen = GENERATORS[instruction.structure] || genHouse;
@@ -299,47 +404,49 @@ function originFor(bot, instruction) {
   );
 }
 
-async function setBlock(bot, pos, name) {
-  // Creative-mode fill via server command keeps placement fast and reliable.
-  bot.chat(`/setblock ${pos.x} ${pos.y} ${pos.z} minecraft:${name} replace`);
+/**
+ * Ground the build: drop the origin to the first solid block under the bot so
+ * structures sit on the terrain instead of floating.
+ */
+function groundY(bot, origin, width, depth) {
+  let best = origin.y;
+  let found = false;
+  for (const [dx, dz] of [
+    [0, 0],
+    [width - 1, 0],
+    [0, depth - 1],
+    [width - 1, depth - 1],
+  ]) {
+    for (let y = origin.y + 4; y > origin.y - 12; y -= 1) {
+      const block = bot.blockAt(new Vec3(origin.x + dx, y, origin.z + dz));
+      if (block && block.boundingBox === "block" && block.name !== "air") {
+        best = found ? Math.min(best, y + 1) : y + 1;
+        found = true;
+        break;
+      }
+    }
+  }
+  return found ? best : origin.y;
 }
 
-export async function runBuild(bot, instruction, job, onProgress) {
+export async function runBuild(bot, instruction, job, onProgress, mode) {
   const blocks = planBuild(instruction);
-  const origin = originFor(bot, instruction);
-  const total = blocks.length;
-  const batch = Number(process.env.BLOCKS_PER_TICK || 24);
-
-  for (let idx = 0; idx < total; idx += 1) {
-    if (job.cancelled) return;
-    const b = blocks[idx];
-    await setBlock(bot, origin.offset(b.x, b.y, b.z), b.block);
-    if (idx % batch === 0) {
-      onProgress?.(idx, total);
-      await new Promise((r) => setTimeout(r, 50));
-    }
-  }
-  onProgress?.(total, total);
+  const base = originFor(bot, instruction);
+  const { width, depth } = instruction.dimensions;
+  const origin = new Vec3(base.x, groundY(bot, base, width, depth), base.z);
+  const result = await placeBlocks(bot, blocks, origin, job, onProgress, mode);
+  return { ...result, origin, total: blocks.length };
 }
 
-export async function clearArea(bot, instruction, job, onProgress) {
+export async function clearArea(bot, instruction, job, onProgress, mode) {
   const { width, depth } = instruction.dimensions;
-  const height = 20;
-  const origin = originFor(bot, instruction);
-  const total = width * depth;
-  let done = 0;
-  for (let x = 0; x < width; x += 1) {
-    for (let z = 0; z < depth; z += 1) {
-      if (job.cancelled) return;
-      for (let y = 0; y < height; y += 1) {
-        await setBlock(bot, origin.offset(x, y, z), "air");
-      }
-      done += 1;
-      if (done % 16 === 0) {
-        onProgress?.(done, total);
-        await new Promise((r) => setTimeout(r, 40));
-      }
-    }
-  }
-  onProgress?.(total, total);
+  const height = 24;
+  const base = originFor(bot, instruction);
+  const origin = new Vec3(base.x, groundY(bot, base, width, depth), base.z);
+  const blocks = [];
+  for (let x = 0; x < width; x += 1)
+    for (let z = 0; z < depth; z += 1)
+      for (let y = 0; y < height; y += 1) blocks.push({ x, y, z, block: "air" });
+  const result = await placeBlocks(bot, blocks, origin, job, onProgress, mode);
+  return { ...result, origin, total: blocks.length };
 }

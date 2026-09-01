@@ -11,6 +11,8 @@ const STRUCTURES = [
   ["wall", ["wall", "perimeter", "fence"]],
   ["pyramid", ["pyramid", "tomb"]],
   ["farm", ["farm", "field", "crops"]],
+  ["garden", ["garden", "park", "flower", "orchard"]],
+  ["fountain", ["fountain", "pond", "water feature"]],
   ["house", ["house", "hut", "cabin", "cottage", "home", "shack"]],
 ];
 
@@ -33,6 +35,8 @@ const BASE_SIZE = {
   wall: [21, 1, 5, 1],
   pyramid: [21, 21, 11, 1],
   farm: [13, 13, 1, 1],
+  garden: [15, 15, 2, 1],
+  fountain: [11, 11, 5, 1],
   unknown: [9, 9, 4, 1],
 };
 

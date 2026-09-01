@@ -98,7 +98,40 @@ cp .env.example .env      # set MC_HOST / MC_PORT / MC_USERNAME
 npm start                 # ws://localhost:8765`}
           </pre>
         </div>
+
+        <div className="glass mt-8 rounded-2xl p-6">
+          <h2 className="font-display text-base font-semibold">
+            Desktop companion — no Node.js required
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The ZeroPulse Companion wraps the same bridge in a desktop app that ships its own
+            runtime. Launch it, fill in your LAN port, press{" "}
+            <span className="font-mono text-foreground">Start bridge</span>, and the dashboard
+            connects automatically. Windows x64 and macOS builds are produced from this repo with{" "}
+            <span className="font-mono text-foreground">./desktop/build.sh</span> — they are ~160 MB
+            (Windows) and ~390 MB (macOS) because the Electron runtime and the full Minecraft
+            protocol dataset are bundled, so they are distributed as release artifacts rather than
+            from this page.
+          </p>
+          <pre className="mt-3 overflow-auto rounded-xl border border-border/70 bg-background/70 p-4 font-mono text-xs leading-relaxed text-muted-foreground">
+            {`./desktop/build.sh                        # Windows x64 + macOS x64
+PLATFORMS=darwin ARCH=arm64 ./desktop/build.sh   # Apple Silicon`}
+          </pre>
+        </div>
+
+        <div className="glass mt-8 rounded-2xl p-6">
+          <h2 className="font-display text-base font-semibold">How blocks get placed</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            On spawn the bot probes for operator rights. With cheats or op it builds using{" "}
+            <span className="font-mono text-foreground">/fill</span> and{" "}
+            <span className="font-mono text-foreground">/setblock</span> for near-instant results.
+            Without op it falls back to real hand placement: the creative inventory API loads each
+            block, the bot flies to the spot and clicks the neighbouring face. The dashboard shows
+            which mode is active and reports the exact world coordinates when a build finishes.
+          </p>
+        </div>
       </main>
+
       <SiteFooter />
     </div>
   );
