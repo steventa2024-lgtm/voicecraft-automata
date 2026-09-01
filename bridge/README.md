@@ -79,3 +79,24 @@ finish coordinates are chatted in-game and streamed back to the dashboard.
 ## Structures
 
 house · mansion · tower · castle · pyramid · bridge · wall · farm · garden · fountain
+
+
+## Control it from your phone (relay mode)
+
+The bridge can dial out to the ZeroPulse relay instead of waiting for a LAN
+WebSocket, so a phone on mobile data can drive the bot running on your PC —
+no port forwarding.
+
+1. Open the dashboard, switch **Connection** to *Relay (anywhere)* and copy the
+   pairing code.
+2. Set `ZP_PAIR_CODE=<code>` in `bridge/.env` (or paste it into the companion
+   app's *Pairing code* field) and start the bridge.
+3. Speak. Commands travel dashboard → relay → bridge; progress, block counts
+   and world coordinates travel straight back.
+
+Everything is ephemeral broadcast — no build data is stored.
+
+## Structures
+
+house, mansion, tower, watchtower, castle, fortress, pyramid, bridge, wall,
+farm, garden, fountain.

@@ -95,8 +95,15 @@ function DownloadPage() {
             {`unzip zeropulse-bridge.zip && cd zeropulse-bridge
 npm install
 cp .env.example .env      # set MC_HOST / MC_PORT / MC_USERNAME
+# optional: ZP_PAIR_CODE=K7QM24  → control it from your phone
 npm start                 # ws://localhost:8765`}
           </pre>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Add a pairing code and the bridge dials out to the ZeroPulse relay — switch the
+            dashboard to <span className="font-mono text-foreground">Relay (anywhere)</span>, enter
+            the same code, and you can speak build orders from your phone while Minecraft runs on
+            your PC. No port forwarding.
+          </p>
         </div>
 
         <div className="glass mt-8 rounded-2xl p-6">
