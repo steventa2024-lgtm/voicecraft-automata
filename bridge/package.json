@@ -1,0 +1,20 @@
+{
+  "name": "zeropulse-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local companion that connects the ZeroPulse dashboard to Minecraft Java Edition via Mineflayer.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mineflayer": "^4.20.1",
+    "vec3": "^0.1.10",
+    "ws": "^8.18.0"
+  }
+}
