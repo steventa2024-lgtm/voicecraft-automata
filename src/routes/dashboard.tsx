@@ -79,8 +79,8 @@ function Dashboard() {
   const rowId = useRef(0);
 
   const meta = STATUS_META[bridge.status];
-  const live = draft || transcript;
-  const preview = live ? parseCommand(live) : (log[0]?.instruction ?? parseCommand(""));
+  const typed = draft || transcript;
+  const preview = typed ? parseCommand(typed) : (log[0]?.instruction ?? parseCommand(""));
 
   const dispatch = useCallback(
     (text: string) => {
