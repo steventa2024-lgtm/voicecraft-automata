@@ -9,6 +9,10 @@ const DOWNLOADS: Record<DownloadKind, { envKey: string; filename: string }> = {
   bedrock: { envKey: "R2_BEDROCK_OBJECT_KEY", filename: "ZeroPulseBedrockGateway.zip" },
 };
 
+function configuredObjectKey(kind: DownloadKind): string {
+  return process.env[DOWNLOADS[kind].envKey] || `releases/${DOWNLOADS[kind].filename}`;
+}
+
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -52,9 +56,9 @@ export async function createProtectedDownloadUrl(
   const accessKeyId = process.env["R2_ACCESS_KEY_ID"];
   const secretAccessKey = process.env["R2_SECRET_ACCESS_KEY"];
   const bucket = process.env["R2_BUCKET"];
-  const objectKey = process.env[DOWNLOADS[kind].envKey];
+  const objectKey = configuredObjectKey(kind);
 
-  if (accountId && accessKeyId && secretAccessKey && bucket && objectKey) {
+  if (accountId && accessKeyId && secretAccessKey && bucket) {
     const client = new S3Client({
       region: "auto",
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
@@ -69,6 +73,19 @@ export async function createProtectedDownloadUrl(
       }),
       { expiresIn: 120 },
     );
+  }
+
+  if (process.env["SUPABASE_URL"] && process.env["SUPABASE_SERVICE_ROLE_KEY"]) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const storageBucket = process.env["SUPABASE_DOWNLOAD_BUCKET"] || "zeropulse-releases";
+    const { data, error } = await supabaseAdmin.storage
+      .from(storageBucket)
+      .createSignedUrl(objectKey, 120, { download: DOWNLOADS[kind].filename });
+    if (error || !data?.signedUrl) {
+      console.error(`[Downloads] Protected ${kind} object unavailable`, error?.message || "missing signed URL");
+      throw new ApiError(503, "download_missing", "This protected download is not available yet.");
+    }
+    return data.signedUrl;
   }
 
   const expires = Math.floor(Date.now() / 1000) + 120;
@@ -104,7 +121,11 @@ export async function serveLocalDownload(kind: DownloadKind, request: Request): 
     import("node:stream"),
     import("node:path"),
   ]);
-  const filePath = path.join(process.cwd(), "private", "downloads", DOWNLOADS[kind].filename);
+  const downloadsRoot = path.resolve(process.cwd(), "private", "downloads");
+  const filePath = path.resolve(downloadsRoot, DOWNLOADS[kind].filename);
+  if (path.dirname(filePath) !== downloadsRoot) {
+    throw new ApiError(500, "invalid_download_path", "The protected download path is invalid.");
+  }
   let fileStat;
   try {
     fileStat = await stat(filePath);
@@ -118,6 +139,8 @@ export async function serveLocalDownload(kind: DownloadKind, request: Request): 
       "content-length": String(fileStat.size),
       "content-disposition": `attachment; filename="${DOWNLOADS[kind].filename}"`,
       "cache-control": "private, no-store",
+      "x-content-type-options": "nosniff",
+      "content-security-policy": "default-src 'none'; sandbox",
     },
   });
 }

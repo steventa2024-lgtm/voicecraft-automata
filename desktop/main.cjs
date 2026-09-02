@@ -6,13 +6,36 @@
  * it behaves exactly like `node index.js`.
  */
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { randomUUID } = require("crypto");
+const { existsSync, readFileSync, writeFileSync } = require("fs");
 const path = require("path");
 const { fork } = require("child_process");
 
 let win = null;
 let bridge = null;
 
+const DEFAULT_APP_URL = "https://id-preview--39d2951c-8adb-440f-b598-47437cb660b0.lovable.app";
+
+function normalizedAppUrl(value) {
+  try {
+    const url = new URL(value || DEFAULT_APP_URL);
+    const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+    if (url.protocol !== "https:" && !localHttp) return DEFAULT_APP_URL;
+    return url.origin;
+  } catch {
+    return DEFAULT_APP_URL;
+  }
+}
+
 const bridgeEntry = () => path.join(__dirname, "bridge", "index.js");
+
+function installationId() {
+  const file = path.join(app.getPath("userData"), "installation-id");
+  if (existsSync(file)) return readFileSync(file, "utf8").trim();
+  const value = `zp-install-${randomUUID()}`;
+  writeFileSync(file, value, "utf8");
+  return value;
+}
 
 function send(channel, payload) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
@@ -20,6 +43,7 @@ function send(channel, payload) {
 
 function startBridge(config) {
   stopBridge();
+  const appUrl = normalizedAppUrl(config.appUrl);
   bridge = fork(bridgeEntry(), [], {
     env: {
       ...process.env,
@@ -30,6 +54,10 @@ function startBridge(config) {
       MC_VERSION: config.version || "",
       BRIDGE_PORT: String(config.bridgePort || 8765),
       ZP_PAIR_CODE: (config.pairCode || "").toUpperCase(),
+      ZP_DEVICE_ID: installationId(),
+      ZP_API_URL:
+        process.env.ZP_API_URL ||
+        appUrl,
     },
     execPath: process.execPath,
     silent: true,
@@ -71,7 +99,7 @@ function createWindow() {
 
 ipcMain.handle("bridge:start", (_e, config) => startBridge(config || {}));
 ipcMain.handle("bridge:stop", () => stopBridge());
-ipcMain.handle("open:dashboard", (_e, url) => shell.openExternal(url));
+ipcMain.handle("open:dashboard", (_e, url) => shell.openExternal(`${normalizedAppUrl(url)}/dashboard`));
 
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => {

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { KeyRound, LogIn, LogOut, ShieldCheck, UserRound, Waves } from "lucide-react";
+import { KeyRound, LogIn, LogOut, UserRound, Waves } from "lucide-react";
 import { useAuth } from "./auth-provider";
 import {
   DropdownMenu,
@@ -39,15 +39,6 @@ export function SiteHeader() {
           >
             World setup
           </Link>
-          {auth.account?.isAdmin ? (
-            <Link
-              to="/admin/keys"
-              className="hidden items-center gap-1.5 rounded-md px-3 py-2 text-primary transition hover:bg-primary/10 lg:flex"
-              activeProps={{ className: "bg-primary/10" }}
-            >
-              <ShieldCheck className="size-4" /> Admin
-            </Link>
-          ) : null}
           <Link
             to="/download"
             className="rounded-md bg-primary px-3.5 py-2 font-medium text-primary-foreground transition hover:bg-primary-glow"
@@ -79,13 +70,6 @@ export function SiteHeader() {
                 <DropdownMenuItem onSelect={() => auth.setKeyOpen(true)}>
                   <KeyRound className="size-4" /> Add a key
                 </DropdownMenuItem>
-                {auth.account?.isAdmin ? (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin/keys">
-                      <ShieldCheck className="size-4" /> Admin keys
-                    </Link>
-                  </DropdownMenuItem>
-                ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => void auth.signOut()}>
                   <LogOut className="size-4" /> Sign out
