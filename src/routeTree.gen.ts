@@ -12,11 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DownloadRouteImport } from './routes/download'
+import { Route as KeyGeneratorRouteImport } from './routes/key-generator'
 import { Route as WorldSetupRouteImport } from './routes/world-setup'
 import { Route as AdminKeysRouteImport } from './routes/admin/keys'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ApiAccountMeRouteImport } from './routes/api/account/me'
-import { Route as ApiAdminKeysRouteImport } from './routes/api/admin/keys'
 import { Route as ApiBillingCheckoutRouteImport } from './routes/api/billing/checkout'
 import { Route as ApiBillingPortalRouteImport } from './routes/api/billing/portal'
 import { Route as ApiBillingWebhookRouteImport } from './routes/api/billing/webhook'
@@ -26,6 +26,10 @@ import { Route as ApiDownloadFilesBedrockRouteImport } from './routes/api/downlo
 import { Route as ApiDownloadFilesJavaRouteImport } from './routes/api/download-files/java'
 import { Route as ApiDownloadsBedrockRouteImport } from './routes/api/downloads/bedrock'
 import { Route as ApiDownloadsJavaRouteImport } from './routes/api/downloads/java'
+import { Route as ApiKeyGeneratorKeysRouteImport } from './routes/api/key-generator/keys'
+import { Route as ApiKeyGeneratorLoginRouteImport } from './routes/api/key-generator/login'
+import { Route as ApiKeyGeneratorLogoutRouteImport } from './routes/api/key-generator/logout'
+import { Route as ApiKeyGeneratorSessionRouteImport } from './routes/api/key-generator/session'
 import { Route as ApiLicenseRedeemRouteImport } from './routes/api/license/redeem'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 
@@ -42,6 +46,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const DownloadRoute = DownloadRouteImport.update({
   id: '/download',
   path: '/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KeyGeneratorRoute = KeyGeneratorRouteImport.update({
+  id: '/key-generator',
+  path: '/key-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorldSetupRoute = WorldSetupRouteImport.update({
@@ -62,11 +71,6 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
 const ApiAccountMeRoute = ApiAccountMeRouteImport.update({
   id: '/api/account/me',
   path: '/api/account/me',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminKeysRoute = ApiAdminKeysRouteImport.update({
-  id: '/api/admin/keys',
-  path: '/api/admin/keys',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBillingCheckoutRoute = ApiBillingCheckoutRouteImport.update({
@@ -114,6 +118,26 @@ const ApiDownloadsJavaRoute = ApiDownloadsJavaRouteImport.update({
   path: '/api/downloads/java',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiKeyGeneratorKeysRoute = ApiKeyGeneratorKeysRouteImport.update({
+  id: '/api/key-generator/keys',
+  path: '/api/key-generator/keys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKeyGeneratorLoginRoute = ApiKeyGeneratorLoginRouteImport.update({
+  id: '/api/key-generator/login',
+  path: '/api/key-generator/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKeyGeneratorLogoutRoute = ApiKeyGeneratorLogoutRouteImport.update({
+  id: '/api/key-generator/logout',
+  path: '/api/key-generator/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKeyGeneratorSessionRoute = ApiKeyGeneratorSessionRouteImport.update({
+  id: '/api/key-generator/session',
+  path: '/api/key-generator/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiLicenseRedeemRoute = ApiLicenseRedeemRouteImport.update({
   id: '/api/license/redeem',
   path: '/api/license/redeem',
@@ -129,11 +153,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/download': typeof DownloadRoute
+  '/key-generator': typeof KeyGeneratorRoute
   '/world-setup': typeof WorldSetupRoute
   '/admin/keys': typeof AdminKeysRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/api/account/me': typeof ApiAccountMeRoute
-  '/api/admin/keys': typeof ApiAdminKeysRoute
   '/api/billing/checkout': typeof ApiBillingCheckoutRoute
   '/api/billing/portal': typeof ApiBillingPortalRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
@@ -143,6 +167,10 @@ export interface FileRoutesByFullPath {
   '/api/download-files/java': typeof ApiDownloadFilesJavaRoute
   '/api/downloads/bedrock': typeof ApiDownloadsBedrockRoute
   '/api/downloads/java': typeof ApiDownloadsJavaRoute
+  '/api/key-generator/keys': typeof ApiKeyGeneratorKeysRoute
+  '/api/key-generator/login': typeof ApiKeyGeneratorLoginRoute
+  '/api/key-generator/logout': typeof ApiKeyGeneratorLogoutRoute
+  '/api/key-generator/session': typeof ApiKeyGeneratorSessionRoute
   '/api/license/redeem': typeof ApiLicenseRedeemRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
@@ -150,11 +178,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/download': typeof DownloadRoute
+  '/key-generator': typeof KeyGeneratorRoute
   '/world-setup': typeof WorldSetupRoute
   '/admin/keys': typeof AdminKeysRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/api/account/me': typeof ApiAccountMeRoute
-  '/api/admin/keys': typeof ApiAdminKeysRoute
   '/api/billing/checkout': typeof ApiBillingCheckoutRoute
   '/api/billing/portal': typeof ApiBillingPortalRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
@@ -164,6 +192,10 @@ export interface FileRoutesByTo {
   '/api/download-files/java': typeof ApiDownloadFilesJavaRoute
   '/api/downloads/bedrock': typeof ApiDownloadsBedrockRoute
   '/api/downloads/java': typeof ApiDownloadsJavaRoute
+  '/api/key-generator/keys': typeof ApiKeyGeneratorKeysRoute
+  '/api/key-generator/login': typeof ApiKeyGeneratorLoginRoute
+  '/api/key-generator/logout': typeof ApiKeyGeneratorLogoutRoute
+  '/api/key-generator/session': typeof ApiKeyGeneratorSessionRoute
   '/api/license/redeem': typeof ApiLicenseRedeemRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
@@ -172,11 +204,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/download': typeof DownloadRoute
+  '/key-generator': typeof KeyGeneratorRoute
   '/world-setup': typeof WorldSetupRoute
   '/admin/keys': typeof AdminKeysRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/api/account/me': typeof ApiAccountMeRoute
-  '/api/admin/keys': typeof ApiAdminKeysRoute
   '/api/billing/checkout': typeof ApiBillingCheckoutRoute
   '/api/billing/portal': typeof ApiBillingPortalRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
@@ -186,6 +218,10 @@ export interface FileRoutesById {
   '/api/download-files/java': typeof ApiDownloadFilesJavaRoute
   '/api/downloads/bedrock': typeof ApiDownloadsBedrockRoute
   '/api/downloads/java': typeof ApiDownloadsJavaRoute
+  '/api/key-generator/keys': typeof ApiKeyGeneratorKeysRoute
+  '/api/key-generator/login': typeof ApiKeyGeneratorLoginRoute
+  '/api/key-generator/logout': typeof ApiKeyGeneratorLogoutRoute
+  '/api/key-generator/session': typeof ApiKeyGeneratorSessionRoute
   '/api/license/redeem': typeof ApiLicenseRedeemRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
@@ -195,11 +231,11 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/download'
+    | '/key-generator'
     | '/world-setup'
     | '/admin/keys'
     | '/auth/callback'
     | '/api/account/me'
-    | '/api/admin/keys'
     | '/api/billing/checkout'
     | '/api/billing/portal'
     | '/api/billing/webhook'
@@ -209,6 +245,10 @@ export interface FileRouteTypes {
     | '/api/download-files/java'
     | '/api/downloads/bedrock'
     | '/api/downloads/java'
+    | '/api/key-generator/keys'
+    | '/api/key-generator/login'
+    | '/api/key-generator/logout'
+    | '/api/key-generator/session'
     | '/api/license/redeem'
     | '/api/public/stripe-webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -216,11 +256,11 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/download'
+    | '/key-generator'
     | '/world-setup'
     | '/admin/keys'
     | '/auth/callback'
     | '/api/account/me'
-    | '/api/admin/keys'
     | '/api/billing/checkout'
     | '/api/billing/portal'
     | '/api/billing/webhook'
@@ -230,6 +270,10 @@ export interface FileRouteTypes {
     | '/api/download-files/java'
     | '/api/downloads/bedrock'
     | '/api/downloads/java'
+    | '/api/key-generator/keys'
+    | '/api/key-generator/login'
+    | '/api/key-generator/logout'
+    | '/api/key-generator/session'
     | '/api/license/redeem'
     | '/api/public/stripe-webhook'
   id:
@@ -237,11 +281,11 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/download'
+    | '/key-generator'
     | '/world-setup'
     | '/admin/keys'
     | '/auth/callback'
     | '/api/account/me'
-    | '/api/admin/keys'
     | '/api/billing/checkout'
     | '/api/billing/portal'
     | '/api/billing/webhook'
@@ -251,6 +295,10 @@ export interface FileRouteTypes {
     | '/api/download-files/java'
     | '/api/downloads/bedrock'
     | '/api/downloads/java'
+    | '/api/key-generator/keys'
+    | '/api/key-generator/login'
+    | '/api/key-generator/logout'
+    | '/api/key-generator/session'
     | '/api/license/redeem'
     | '/api/public/stripe-webhook'
   fileRoutesById: FileRoutesById
@@ -259,11 +307,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   DownloadRoute: typeof DownloadRoute
+  KeyGeneratorRoute: typeof KeyGeneratorRoute
   WorldSetupRoute: typeof WorldSetupRoute
   AdminKeysRoute: typeof AdminKeysRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   ApiAccountMeRoute: typeof ApiAccountMeRoute
-  ApiAdminKeysRoute: typeof ApiAdminKeysRoute
   ApiBillingCheckoutRoute: typeof ApiBillingCheckoutRoute
   ApiBillingPortalRoute: typeof ApiBillingPortalRoute
   ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
@@ -273,6 +321,10 @@ export interface RootRouteChildren {
   ApiDownloadFilesJavaRoute: typeof ApiDownloadFilesJavaRoute
   ApiDownloadsBedrockRoute: typeof ApiDownloadsBedrockRoute
   ApiDownloadsJavaRoute: typeof ApiDownloadsJavaRoute
+  ApiKeyGeneratorKeysRoute: typeof ApiKeyGeneratorKeysRoute
+  ApiKeyGeneratorLoginRoute: typeof ApiKeyGeneratorLoginRoute
+  ApiKeyGeneratorLogoutRoute: typeof ApiKeyGeneratorLogoutRoute
+  ApiKeyGeneratorSessionRoute: typeof ApiKeyGeneratorSessionRoute
   ApiLicenseRedeemRoute: typeof ApiLicenseRedeemRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
@@ -298,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/download'
       fullPath: '/download'
       preLoaderRoute: typeof DownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/key-generator': {
+      id: '/key-generator'
+      path: '/key-generator'
+      fullPath: '/key-generator'
+      preLoaderRoute: typeof KeyGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/world-setup': {
@@ -326,13 +385,6 @@ declare module '@tanstack/react-router' {
       path: '/api/account/me'
       fullPath: '/api/account/me'
       preLoaderRoute: typeof ApiAccountMeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/keys': {
-      id: '/api/admin/keys'
-      path: '/api/admin/keys'
-      fullPath: '/api/admin/keys'
-      preLoaderRoute: typeof ApiAdminKeysRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/billing/checkout': {
@@ -398,6 +450,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDownloadsJavaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/key-generator/keys': {
+      id: '/api/key-generator/keys'
+      path: '/api/key-generator/keys'
+      fullPath: '/api/key-generator/keys'
+      preLoaderRoute: typeof ApiKeyGeneratorKeysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/key-generator/login': {
+      id: '/api/key-generator/login'
+      path: '/api/key-generator/login'
+      fullPath: '/api/key-generator/login'
+      preLoaderRoute: typeof ApiKeyGeneratorLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/key-generator/logout': {
+      id: '/api/key-generator/logout'
+      path: '/api/key-generator/logout'
+      fullPath: '/api/key-generator/logout'
+      preLoaderRoute: typeof ApiKeyGeneratorLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/key-generator/session': {
+      id: '/api/key-generator/session'
+      path: '/api/key-generator/session'
+      fullPath: '/api/key-generator/session'
+      preLoaderRoute: typeof ApiKeyGeneratorSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/license/redeem': {
       id: '/api/license/redeem'
       path: '/api/license/redeem'
@@ -419,11 +499,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   DownloadRoute: DownloadRoute,
+  KeyGeneratorRoute: KeyGeneratorRoute,
   WorldSetupRoute: WorldSetupRoute,
   AdminKeysRoute: AdminKeysRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   ApiAccountMeRoute: ApiAccountMeRoute,
-  ApiAdminKeysRoute: ApiAdminKeysRoute,
   ApiBillingCheckoutRoute: ApiBillingCheckoutRoute,
   ApiBillingPortalRoute: ApiBillingPortalRoute,
   ApiBillingWebhookRoute: ApiBillingWebhookRoute,
@@ -433,6 +513,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDownloadFilesJavaRoute: ApiDownloadFilesJavaRoute,
   ApiDownloadsBedrockRoute: ApiDownloadsBedrockRoute,
   ApiDownloadsJavaRoute: ApiDownloadsJavaRoute,
+  ApiKeyGeneratorKeysRoute: ApiKeyGeneratorKeysRoute,
+  ApiKeyGeneratorLoginRoute: ApiKeyGeneratorLoginRoute,
+  ApiKeyGeneratorLogoutRoute: ApiKeyGeneratorLogoutRoute,
+  ApiKeyGeneratorSessionRoute: ApiKeyGeneratorSessionRoute,
   ApiLicenseRedeemRoute: ApiLicenseRedeemRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }

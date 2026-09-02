@@ -1,4 +1,4 @@
-import { createClient, type User } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export class ApiError extends Error {
@@ -30,7 +30,9 @@ export function getBearerToken(request: Request): string {
   return value.slice(7);
 }
 
-export async function requireApiUser(request: Request): Promise<User> {
+export async function requireApiUserClient(
+  request: Request,
+): Promise<{ user: User; client: SupabaseClient }> {
   const url = process.env["SUPABASE_URL"];
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
   if (!url || !key) throw new ApiError(503, "auth_unconfigured", "Authentication is not configured.");
@@ -41,7 +43,11 @@ export async function requireApiUser(request: Request): Promise<User> {
   });
   const { data, error } = await client.auth.getUser(token);
   if (error || !data.user) throw new ApiError(401, "invalid_session", "Your session expired. Sign in again.");
-  return data.user;
+  return { user: data.user, client };
+}
+
+export async function requireApiUser(request: Request): Promise<User> {
+  return (await requireApiUserClient(request)).user;
 }
 
 export async function requireAdmin(request: Request): Promise<User> {

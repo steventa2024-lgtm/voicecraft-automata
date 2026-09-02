@@ -18,7 +18,10 @@ export function AuthModal() {
   }>({ google: null, github: null });
 
   const authCallbackUrl = () => {
-    const callback = new URL("/auth/callback", window.location.origin);
+    const configuredOrigin = import.meta.env["VITE_PUBLIC_APP_URL"];
+    const localHost = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+    const origin = localHost && configuredOrigin ? configuredOrigin : window.location.origin;
+    const callback = new URL("/auth/callback", origin);
     callback.searchParams.set("next", "/dashboard");
     return callback.toString();
   };
@@ -73,8 +76,11 @@ export function AuthModal() {
     setMessage(null);
 
     if (provider === "google") {
+      const configuredOrigin = import.meta.env["VITE_PUBLIC_APP_URL"];
+      const localHost = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+      const redirectOrigin = localHost && configuredOrigin ? configuredOrigin : window.location.origin;
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: redirectOrigin,
       });
       if (result.error) {
         setBusy(false);
@@ -121,7 +127,7 @@ export function AuthModal() {
         </div>
         {providers.google === false || providers.github === false ? (
           <p className="text-center text-[11px] text-muted-foreground">
-            Providers marked setup pending are disabled on the connected authentication project.
+            Google opens the secure hosted app when started from localhost. GitHub remains disabled until a real GitHub OAuth App client ID and secret are added to the connected Supabase project.
           </p>
         ) : null}
 

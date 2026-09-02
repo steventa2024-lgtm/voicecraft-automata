@@ -1,12 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { errorResponse, requireApiUser } from "@/lib/server/auth.server";
+import { errorResponse, requireApiUserClient } from "@/lib/server/auth.server";
 
 export const Route = createFileRoute("/api/account/me")({
   server: { handlers: { GET: async ({ request }) => {
     try {
-      const user = await requireApiUser(request);
-      const db = supabaseAdmin as any;
+      const { user, client: db } = await requireApiUserClient(request);
       const today = new Date().toISOString().slice(0, 10);
       const [{ data: profile, error: profileError }, { data: usage, error: usageError }] =
         await Promise.all([

@@ -23,6 +23,7 @@
       p.sub { margin: 0 0 20px; color: var(--muted); }
       .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; backdrop-filter: blur(12px); }
       .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .wide { grid-column: 1 / -1; }
       label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
       input {
         width: 100%; height: 36px; padding: 0 10px; border-radius: 9px; color: var(--text);
@@ -56,6 +57,7 @@
         <div><label>Bot username</label><input id="username" value="ZeroPulse" /></div>
         <div><label>Bridge port</label><input id="bridgePort" value="8765" /></div>
         <div><label>Pairing code (control from your phone)</label><input id="pairCode" placeholder="e.g. K7QM24" /></div>
+        <div class="wide"><label>ZeroPulse website</label><input id="appUrl" value="https://id-preview--39d2951c-8adb-440f-b598-47437cb660b0.lovable.app" /></div>
       </div>
       <div class="row">
         <button id="start" class="primary">Start bridge</button>
@@ -88,9 +90,10 @@
           username: $("username").value.trim(),
           bridgePort: Number($("bridgePort").value),
           pairCode: $("pairCode").value.trim().toUpperCase(),
+          appUrl: $("appUrl").value.trim(),
         });
       $("stop").onclick = () => window.companion.stop();
-      $("dash").onclick = () => window.companion.openDashboard("https://project--39d2951c-8adb-440f-b598-47437cb660b0.lovable.app/dashboard");
+      $("dash").onclick = () => window.companion.openDashboard($("appUrl").value.trim());
     </script>
   </body>
 </html>
