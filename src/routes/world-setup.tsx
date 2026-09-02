@@ -40,7 +40,7 @@ const DEFAULTS: WorldConfig = {
   host: "localhost",
   port: "25565",
   username: "ZeroPulse",
-  version: "1.20.4",
+  version: "",
   code: "",
 };
 
@@ -79,7 +79,7 @@ function WorldSetup() {
     `MC_HOST=${cfg.host || "localhost"}`,
     `MC_PORT=${cfg.port || "25565"}`,
     `MC_USERNAME=${cfg.username || "ZeroPulse"}`,
-    `MC_VERSION=${cfg.version || "1.20.4"}`,
+    `MC_VERSION=${cfg.version}`,
     `ZP_PAIR_CODE=${cfg.code}`,
   ].join("\n");
 
@@ -169,10 +169,10 @@ function WorldSetup() {
               hint="appears in game as a player"
             />
             <Field
-              label="Minecraft version"
+              label="Minecraft version (optional)"
               value={cfg.version}
               onChange={(v) => update({ version: v })}
-              hint="e.g. 1.20.4"
+              hint="leave blank to auto-detect (recommended)"
             />
             <Field
               label="Pairing code"
@@ -184,14 +184,16 @@ function WorldSetup() {
 
           <div className="mt-5 rounded-xl border border-border/70 bg-background/60 p-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                bridge/.env
-              </p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">bridge/.env</p>
               <button
                 onClick={copy}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs transition hover:bg-muted"
               >
-                {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+                {copied ? (
+                  <Check className="size-3.5 text-success" />
+                ) : (
+                  <Copy className="size-3.5" />
+                )}
                 {copied ? "Copied" : "Copy"}
               </button>
             </div>

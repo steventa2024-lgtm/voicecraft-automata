@@ -1,60 +1,99 @@
-# Crafty Command
+# ZeroPulse
 
-Act as an expert full-stack software architect, UI/UX designer, and Node.js game automation engineer. 
+ZeroPulse is a voice-controlled Minecraft Java builder with three parts:
 
-I want to build a complete web platform and desktop bridge for a Minecraft voice-controlled automation system. Users should be able to visit the website, download the local companion software, and use a futuristic dashboard to control Minecraft builds via voice commands (e.g., "build me a mansion").
+1. A TanStack Start landing/download site and mobile-friendly voice dashboard.
+2. A local Node.js bridge that receives dashboard commands over WebSocket or a
+   paired Supabase Realtime channel.
+3. A Mineflayer automation engine that parses high-level requests, generates a
+   bounded block plan, and places it in the connected world.
 
-Please help me architect and code the following three core pillars:
+The platform also includes Supabase email/Google/GitHub authentication, private
+Java and Bedrock downloads, Stripe subscriptions with atomic daily usage limits,
+and SHA-256-hashed friends-and-family license keys.
 
-### 1. Futuristic Public Landing Page & Download Hub
-
-- **Design:** Clean, dark-mode futuristic aesthetic with smooth animations (Tailwind CSS, subtle glow effects, glassmorphism).
-
-- **Features:** A clear hero section explaining the voice automation concept, an interactive preview of the dashboard, and a direct download link for the user's local bridge software.
-
-### 2. Voice-Activated Control Dashboard
-
-- **Design:** Sleek dark UI control center with real-time status indicators.
-
-- **Features:** 
-
-  - Voice recording/speech-to-text integration (via browser Web Speech API or local audio streaming).
-
-  - Command execution log (showing translation from speech like "build a mansion" into structured building instructions).
-
-  - Quick-action templates and status feedback (Connected, Building, Idle, Error).
-
-### 3. Local Bridge & Minecraft Integration (JavaScript/Node.js)
-
-- **Architecture:** A downloadable companion script/app that runs locally on the user's machine where Minecraft Java Edition is installed.
-
-- **Integration:** 
-
-  - Connects to the local Minecraft game instance using **Mineflayer** (Node.js Minecraft bot framework).
-
-  - Receives parsed voice commands from the web dashboard (via WebSocket or local polling).
-
-  - Implements procedural building algorithms that translate high-level commands (e.g., "mansion") into automated block placement routines inside the game.
-
-Let's start by designing the project structure and writing the initial code for the landing page UI and the core Mineflayer integration script.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/39d2951c-8adb-440f-b598-47437cb660b0).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+## Run the website
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+npm install
 npm run dev
 ```
+
+The production web build is `npm run build`.
+
+## Run the Minecraft bridge from source
+
+Minecraft Java must be running in Creative mode or with cheats/operator rights.
+For a single-player world, choose **Esc → Open to LAN → Allow Cheats: ON**, then
+use the port printed in Minecraft chat.
+
+```sh
+cd bridge
+npm install
+```
+
+Create `bridge/.env`:
+
+```dotenv
+MC_HOST=localhost
+MC_PORT=25565
+MC_USERNAME=ZeroPulse
+MC_VERSION=1.20.4
+BRIDGE_PORT=8765
+ZP_PAIR_CODE=
+ZP_API_URL=http://127.0.0.1:8080
+```
+
+Then run `npm start`, open `/dashboard`, and wait for **Connected**. Direct mode
+uses `ws://localhost:8765` on the same computer. To speak from a phone, select
+Relay mode in the dashboard and put its pairing code in `ZP_PAIR_CODE` before
+starting the bridge.
+
+Examples:
+
+- `build me a large stone mansion`
+- `build a 7 floor quartz tower 18 blocks ahead`
+- `build a 21 by 15 sandstone castle behind me`
+- `clear a 31 by 31 area to my left`
+- `stop`
+
+The bot can also receive commands in Minecraft chat with the zp prefix after a
+signed-in dashboard build has paired a short-lived runner token.
+
+## Builder behavior
+
+The bridge validates every remote instruction, clamps dimensions and offsets,
+deduplicates overlapping generator output, validates blocks against the current
+Minecraft registry, rotates the plan relative to the bot, samples the terrain,
+and enforces a 120,000-operation limit.
+
+With operator rights it uses `/fill` and `/setblock`. Without op it can perform
+slower hand placement only when the bot is in Creative mode; farms and water
+features require command mode for exact placement. Survival without op is
+reported as unavailable instead of pretending the build succeeded.
+
+See [bridge/README.md](bridge/README.md) for the protocol and generator details.
+Run the automation regression suite with:
+
+```sh
+cd bridge
+npm test
+```
+
+## Desktop companion
+
+`desktop/` contains the Electron shell that bundles the bridge and Node runtime.
+`desktop/build.sh` stages bridge dependencies and packages Windows/macOS builds.
+
+## Accounts, billing, and private downloads
+
+Copy .env.example values into your deployment environment and apply the
+Supabase migration. See IMPLEMENTATION_BLUEPRINT.md for provider setup, Stripe
+webhook events, R2 private-object configuration, admin promotion, and the full
+modified/new file map.
+
+The Bedrock package source is in bedrock-companion/. It bootstraps the official
+Geyser Standalone gateway and includes console discovery guidance.
+
+This repository is connected to Lovable. Do not rewrite published git history;
+normal commits on the connected branch sync back to the Lovable editor.

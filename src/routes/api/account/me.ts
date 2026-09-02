@@ -1,0 +1,35 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { errorResponse, requireApiUser } from "@/lib/server/auth.server";
+
+export const Route = createFileRoute("/api/account/me")({
+  server: { handlers: { GET: async ({ request }) => {
+    try {
+      const user = await requireApiUser(request);
+      const db = supabaseAdmin as any;
+      const today = new Date().toISOString().slice(0, 10);
+      const [{ data: profile, error: profileError }, { data: usage, error: usageError }] =
+        await Promise.all([
+          db.from("profiles").select("email,is_admin,plan_tier,subscription_status,unlimited_tester,daily_usage_counter").eq("id", user.id).single(),
+          db.from("daily_usage").select("task_count,block_count").eq("user_id", user.id).eq("usage_date", today).maybeSingle(),
+        ]);
+      if (profileError) throw profileError;
+      if (usageError) throw usageError;
+      const adminEmails = (process.env["ADMIN_EMAILS"] || "")
+        .split(",")
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean);
+      const isAdmin = Boolean(
+        profile?.is_admin || (user.email && adminEmails.includes(user.email.toLowerCase())),
+      );
+      return Response.json({
+        user: { id: user.id, email: user.email },
+        profile,
+        usage: usage || { task_count: 0, block_count: 0 },
+        isAdmin,
+      });
+    } catch (error) {
+      return errorResponse(error);
+    }
+  } } },
+});

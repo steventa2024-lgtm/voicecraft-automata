@@ -6,11 +6,13 @@ import {
   Boxes,
   CircleDot,
   Hammer,
+  Mountain,
   Mic,
   MicOff,
   Plug,
   RefreshCw,
   Smartphone,
+  ScanLine,
   Wifi,
   Send,
   Square,
@@ -46,25 +48,59 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-const TEMPLATES = [
-  "Build me a large stone mansion",
-  "Build a bridge",
-  "Build a garden",
-  "Build a fortress",
-  "Build a stone watchtower",
-  "Build a 6 floor quartz tower",
-  "Construct a deepslate castle",
-  "Build a stone fountain",
-  "Make a small oak house",
-  "Build a sandstone pyramid",
-  "Build a wheat farm",
-  "Clear the area in front of me",
+const QUICK_ACTION_GROUPS = [
+  {
+    label: "Plan & control",
+    commands: [
+      "Preview a large stone mansion 12 blocks ahead",
+      "Preview a sandstone pyramid in front of me",
+      "Undo the last build",
+      "Clear a 15 by 15 area in front of me",
+    ],
+  },
+  {
+    label: "Homes",
+    commands: [
+      "Make a small oak house 10 blocks ahead",
+      "Build me a large stone mansion",
+      "Build a two floor brick mansion to my left",
+      "Build a modern glass house to my right",
+    ],
+  },
+  {
+    label: "Defense",
+    commands: [
+      "Construct a deepslate castle",
+      "Build a large stone fortress",
+      "Build a stone watchtower",
+      "Build a 6 floor quartz tower",
+      "Build a 31 block wide wall in front of me",
+    ],
+  },
+  {
+    label: "Landscape & utility",
+    commands: [
+      "Build a bridge 15 blocks ahead",
+      "Build a flower garden",
+      "Build a stone fountain",
+      "Build a sandstone pyramid",
+      "Build a wheat farm",
+    ],
+  },
 ];
 
 const STATUS_META: Record<BridgeStatus, { label: string; dot: string; text: string }> = {
   idle: { label: "Idle", dot: "bg-muted-foreground", text: "text-muted-foreground" },
-  connecting: { label: "Waiting for companion", dot: "bg-warning animate-pulse", text: "text-warning" },
-  bridge: { label: "Companion online · Minecraft offline", dot: "bg-warning", text: "text-warning" },
+  connecting: {
+    label: "Waiting for companion",
+    dot: "bg-warning animate-pulse",
+    text: "text-warning",
+  },
+  bridge: {
+    label: "Companion online · Minecraft offline",
+    dot: "bg-warning",
+    text: "text-warning",
+  },
   connected: { label: "Connected", dot: "bg-success", text: "text-success" },
   building: { label: "Building", dot: "bg-primary animate-pulse", text: "text-primary" },
   error: { label: "Error", dot: "bg-destructive", text: "text-destructive" },
@@ -77,14 +113,39 @@ interface LogRow {
   instruction: BuildInstruction;
 }
 
+interface SpeechResultLike {
+  readonly isFinal: boolean;
+  readonly 0: { transcript: string };
+}
+
+interface SpeechEventLike {
+  readonly resultIndex: number;
+  readonly results: { readonly length: number; readonly [index: number]: SpeechResultLike };
+}
+
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechEventLike) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
 function Dashboard() {
   const bridge = useBridge();
+  const sendToBridge = bridge.send;
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(true);
   const [transcript, setTranscript] = useState("");
   const [draft, setDraft] = useState("");
   const [log, setLog] = useState<LogRow[]>([]);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const rowId = useRef(0);
 
   const meta = STATUS_META[bridge.status];
@@ -108,17 +169,20 @@ function Dashboard() {
           ...prev,
         ].slice(0, 40),
       );
-      bridge.send(instruction);
+      sendToBridge(instruction);
       setDraft("");
       setTranscript("");
     },
-    [bridge],
+    [sendToBridge],
   );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const Ctor =
-      (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition ?? null;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    const Ctor = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
     if (!Ctor) {
       setSupported(false);
       return;
@@ -127,13 +191,15 @@ function Dashboard() {
     rec.lang = "en-US";
     rec.continuous = false;
     rec.interimResults = true;
-    rec.onresult = (event: any) => {
+    rec.onresult = (event: SpeechEventLike) => {
       let text = "";
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        text += event.results[i][0].transcript;
+        const result = event.results[i];
+        if (result) text += result[0].transcript;
       }
       setTranscript(text);
-      if (event.results[event.results.length - 1].isFinal) dispatch(text);
+      const finalResult = event.results[event.results.length - 1];
+      if (finalResult?.isFinal) dispatch(text);
     };
     rec.onend = () => setListening(false);
     rec.onerror = () => setListening(false);
@@ -174,7 +240,11 @@ function Dashboard() {
             </span>
             {bridge.mode ? (
               <span className="glass rounded-full px-3.5 py-2 font-mono text-xs text-muted-foreground">
-                {bridge.mode === "command" ? "/fill placement" : "hand placement"}
+                {bridge.mode === "command"
+                  ? "/fill placement"
+                  : bridge.mode === "creative"
+                    ? "hand placement"
+                    : "building disabled"}
               </span>
             ) : null}
             <button
@@ -235,15 +305,24 @@ function Dashboard() {
               <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
                 Quick actions
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {TEMPLATES.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => dispatch(t)}
-                    className="rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/50 hover:text-primary"
-                  >
-                    {t}
-                  </button>
+              <div className="mt-3 space-y-3">
+                {QUICK_ACTION_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-primary/80">
+                      {group.label}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.commands.map((command) => (
+                        <button
+                          key={command}
+                          onClick={() => dispatch(command)}
+                          className="rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/50 hover:text-primary"
+                        >
+                          {command}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -262,6 +341,35 @@ function Dashboard() {
               <Stat label="Est. blocks" value={estimateBlocks(preview).toLocaleString()} />
               <Stat label="Floors" value={String(preview.floors)} />
             </div>
+            {bridge.siteReport ? (
+              <div className="mt-4 rounded-xl border border-primary/25 bg-primary/5 p-4">
+                <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
+                  <ScanLine className="size-4" /> Site awareness
+                </h3>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <Stat
+                    label="Footprint"
+                    value={`${bridge.siteReport.footprint.width}×${bridge.siteReport.footprint.depth}`}
+                  />
+                  <Stat label="Slope" value={`${bridge.siteReport.slope} blocks`} />
+                  <Stat
+                    label="Excavate"
+                    value={bridge.siteReport.excavationBlocks.toLocaleString()}
+                  />
+                  <Stat
+                    label="Foundation"
+                    value={bridge.siteReport.foundationBlocks.toLocaleString()}
+                  />
+                </div>
+                <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                  <Mountain className="size-3.5 text-accent" /> Base elevation Y{" "}
+                  {bridge.siteReport.baseY}
+                  {bridge.siteReport.protectedBlocks.length
+                    ? ` · ${bridge.siteReport.protectedBlocks.length} protected blocks require attention`
+                    : " · no protected blocks detected"}
+                </p>
+              </div>
+            ) : null}
             <div className="mt-5">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5">
@@ -280,7 +388,8 @@ function Dashboard() {
               onClick={() => {
                 dispatch("stop");
               }}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/40 px-4 py-2.5 text-sm font-medium text-destructive transition hover:bg-destructive/10"
+              disabled={bridge.status !== "building"}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/40 px-4 py-2.5 text-sm font-medium text-destructive transition hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Square className="size-4" /> Abort build
             </button>
@@ -369,8 +478,9 @@ function ConnectionPanel({ bridge }: { bridge: ReturnType<typeof useBridge> }) {
             <Wifi className="size-4 text-primary" /> Connection
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Direct connects this browser to the PC. Relay waits for the companion app using the
-            same pairing code; joining the relay alone does not mean Minecraft is connected.
+            Direct connects a browser on this PC to the companion. Relay waits for the companion
+            using the same pairing code; joining the relay alone does not mean Minecraft is
+            connected.
           </p>
         </div>
         <div className="flex rounded-full border border-border bg-secondary/60 p-1 text-xs">
@@ -385,7 +495,7 @@ function ConnectionPanel({ bridge }: { bridge: ReturnType<typeof useBridge> }) {
               }`}
             >
               {t === "local" ? <Plug className="size-3.5" /> : <Smartphone className="size-3.5" />}
-              {t === "local" ? "Direct (LAN)" : "Relay (anywhere)"}
+              {t === "local" ? "Direct (this PC)" : "Relay (anywhere)"}
             </button>
           ))}
         </div>

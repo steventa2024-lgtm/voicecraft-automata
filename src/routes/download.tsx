@@ -1,159 +1,381 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Terminal, ShieldCheck, Cpu, Monitor, Smartphone, Apple } from "lucide-react";
+import {
+  Check,
+  Cpu,
+  Download,
+  Gamepad2,
+  Globe2,
+  Loader2,
+  LockKeyhole,
+  Monitor,
+  Network,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+} from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import windowsCompanion from "@/assets/zeropulse-windows.zip.asset.json";
-import macCompanion from "@/assets/zeropulse-macos.zip.asset.json";
+import { useAuth } from "@/components/auth-provider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/download")({
   head: () => ({
     meta: [
-      { title: "Download the ZeroPulse Bridge — Local Minecraft Companion" },
+      { title: "Downloads, Console Setup & Plans — ZeroPulse" },
       {
         name: "description",
         content:
-          "Install the ZeroPulse local bridge: a Node.js companion that connects Mineflayer to your Minecraft Java world and executes voice build orders.",
+          "Download the protected ZeroPulse Java or Bedrock companion, connect a console, and choose your Minecraft automation plan.",
       },
-      { property: "og:title", content: "Download the ZeroPulse Bridge" },
-      {
-        property: "og:description",
-        content: "Node.js companion app linking your dashboard to Minecraft Java via Mineflayer.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: DownloadPage,
 });
 
-const STEPS = [
+const PLANS = [
   {
-    icon: Download,
-    title: "1 · Download the companion",
-    body: "Choose Windows or macOS above, unzip the entire download, then open ZeroPulse Companion.",
-  },
-  {
+    id: "starter",
+    name: "Starter",
+    price: 9,
     icon: Cpu,
-    title: "2 · Open Minecraft",
-    body: "Open a Java Edition world to LAN with cheats enabled and copy the port shown in chat.",
+    tasks: "5 tasks / day",
+    blocks: "5,000 blocks / day",
+    description: "For focused daily builds and learning the workflow.",
+    featured: false,
   },
   {
-    icon: ShieldCheck,
-    title: "3 · Start the companion",
-    body: "Enter that LAN port and the pairing code from your dashboard, then press Start bridge.",
+    id: "builder_pro",
+    name: "Builder Pro",
+    price: 30,
+    icon: Sparkles,
+    tasks: "30 tasks / day",
+    blocks: "50,000 blocks / day",
+    description: "For larger bases and regular creative sessions.",
+    featured: true,
   },
   {
-    icon: Smartphone,
-    title: "4 · Speak from any device",
-    body: "Use Relay mode on desktop or mobile. Only send commands after the status says Connected.",
+    id: "architect",
+    name: "Architect",
+    price: 75,
+    icon: Globe2,
+    tasks: "Unlimited tasks",
+    blocks: "500,000 blocks / day",
+    description: "For cities, mega-builds, and high-volume servers.",
+    featured: false,
   },
-];
+] as const;
 
-const DESKTOP_DOWNLOADS = [
-  {
-    icon: Monitor,
-    title: "Windows companion",
-    detail: "Windows 10/11 · x64 · no Node.js required",
-    href: windowsCompanion.url,
+const CONSOLE_GUIDES = {
+  xbox: {
+    title: "Xbox",
+    steps: [
+      "Run the ZeroPulse Bedrock Gateway on a PC or server on the same network as the console.",
+      "Point the gateway at the Java server or LAN world where the ZeroPulse builder bot connects.",
+      "Use a current BedrockConnect DNS method or a LAN-advertising helper to expose the custom server in Xbox's Friends tab.",
+      "Join with the Microsoft account you want to use. Floodgate is required when the Java server should accept Bedrock players without Java accounts.",
+    ],
   },
-  {
-    icon: Apple,
-    title: "macOS companion",
-    detail: "Intel Mac · ZIP archive · no Node.js required",
-    href: macCompanion.url,
+  playstation: {
+    title: "PlayStation",
+    steps: [
+      "Start the Bedrock Gateway on an always-on PC or hosted server and allow UDP port 19132 through its firewall.",
+      "Use a supported BedrockConnect DNS setup or a BedrockTogether-style LAN helper from a phone on the same Wi-Fi.",
+      "Open Minecraft → Play → Friends and select the advertised LAN game, then choose the destination server.",
+      "Keep the helper open during discovery. The ZeroPulse builder still runs beside the Java world or server.",
+    ],
   },
-];
+  switch: {
+    title: "Nintendo Switch",
+    steps: [
+      "Run the Bedrock Gateway and confirm UDP 19132 is reachable from the Switch's network.",
+      "Configure a current BedrockConnect DNS server in the Switch network settings; DNS endpoints can change, so use the provider's current values.",
+      "Open any featured server to reach the custom-server menu, then enter the gateway's public host and Bedrock port.",
+      "Complete Microsoft account pairing when prompted. For internet-hosted gateways, forward UDP 19132 and restrict administration ports.",
+    ],
+  },
+} as const;
 
 function DownloadPage() {
+  const auth = useAuth();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const download = async (kind: "java" | "bedrock") => {
+    if (!auth.requireUser()) return;
+    setBusy(`download-${kind}`);
+    setMessage(null);
+    try {
+      const response = await auth.authorizedFetch(`/api/downloads/${kind}`);
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || "Download is unavailable.");
+      window.location.assign(body.url);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Download is unavailable.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const checkout = async (planTier: string) => {
+    if (!auth.requireUser()) return;
+    setBusy(`plan-${planTier}`);
+    setMessage(null);
+    try {
+      const response = await auth.authorizedFetch("/api/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ tier: planTier }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || "Checkout could not start.");
+      window.location.assign(body.url);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Checkout could not start.");
+      setBusy(null);
+    }
+  };
+
+  const openPortal = async () => {
+    if (!auth.requireUser()) return;
+    setBusy("portal");
+    setMessage(null);
+    try {
+      const response = await auth.authorizedFetch("/api/billing/portal", { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || "Billing portal could not open.");
+      window.location.assign(body.url);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Billing portal could not open.");
+      setBusy(null);
+    }
+  };
+
+  const activePlan = auth.account?.profile.plan_tier;
+  const hasSubscription = ["active", "trialing"].includes(
+    auth.account?.profile.subscription_status || "",
+  );
+
   return (
     <div className="min-h-screen hero-aura">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-4xl px-5 py-16">
-        <h1 className="font-display text-4xl font-semibold tracking-tight">
-          Install the <span className="text-gradient">local bridge</span>
-        </h1>
-        <p className="mt-3 max-w-2xl text-muted-foreground">
-            The companion connects your dashboard to Minecraft Java and places blocks with a
-            Mineflayer bot. Download the desktop app below, start it beside your game, then pair the
-            dashboard.
-        </p>
-
-        <section className="mt-8 grid gap-4 sm:grid-cols-2">
-          {DESKTOP_DOWNLOADS.map((item) => (
-            <a key={item.title} href={item.href} download className="glass group rounded-2xl p-5 transition hover:border-primary/50">
-              <item.icon className="size-6 text-primary" />
-              <h2 className="mt-4 font-display text-lg font-semibold">{item.title}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-              <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary">
-                <Download className="size-4" /> Download ZIP
-              </span>
-            </a>
-          ))}
-        </section>
-
-        <section className="glass mt-5 flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="flex items-center gap-2 font-display font-semibold"><Smartphone className="size-5 text-accent" /> iPhone & Android controller</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Open the dashboard in Safari or Chrome, then choose Add to Home Screen / Install app.</p>
+      <main className="mx-auto w-full max-w-6xl px-5 py-16">
+        <div className="max-w-3xl">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs text-primary">
+            <LockKeyhole className="size-3.5" /> Account-protected downloads
           </div>
-          <Link to="/dashboard" className="shrink-0 rounded-xl bg-primary px-5 py-3 text-center text-sm font-medium text-primary-foreground transition hover:bg-primary-glow">Open mobile dashboard</Link>
-        </section>
-        <p className="mt-3 text-xs text-muted-foreground">
-          A phone can be the voice controller. Minecraft Java and the companion must still run on a Windows/Mac/Linux computer or hosted game server; iOS and Android cannot run a Mineflayer Java bridge locally.
-        </p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
+            One control center. <span className="text-gradient">Two game bridges.</span>
+          </h1>
+          <p className="mt-4 max-w-2xl text-muted-foreground">
+            Sign in once, choose the package that matches your world, and let ZeroPulse verify each
+            build securely before the companion changes any blocks.
+          </p>
+        </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          {STEPS.map((s) => (
-            <div key={s.title} className="glass rounded-2xl p-5">
-              <s.icon className="size-5 text-primary" />
-              <h2 className="mt-3 font-display text-base font-semibold">{s.title}</h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">{s.body}</p>
+        {message ? (
+          <div className="mt-6 rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
+            {message}
+          </div>
+        ) : null}
+
+        <section className="mt-10 grid gap-5 md:grid-cols-2">
+          <article className="glass rounded-3xl p-6">
+            <div className="flex items-start justify-between">
+              <span className="grid size-12 place-items-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/30">
+                <Monitor className="size-6" />
+              </span>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-primary">
+                Primary
+              </span>
             </div>
-          ))}
-        </div>
+            <h2 className="mt-5 font-display text-2xl font-semibold">PC / Java companion</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              The Mineflayer automation runner for Minecraft Java LAN worlds and servers. The
+              Windows package includes its own runtime.
+            </p>
+            <button
+              onClick={() => void download("java")}
+              disabled={Boolean(busy)}
+              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-medium text-primary-foreground transition hover:bg-primary-glow disabled:opacity-50"
+            >
+              {busy === "download-java" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Download className="size-4" />
+              )}
+              Download Java companion
+            </button>
+          </article>
 
-        <div className="glass mt-8 rounded-2xl p-6">
-          <h2 className="font-display text-base font-semibold">
-            Desktop companion — no Node.js required
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Unzip the download, open ZeroPulse Companion, enter the LAN port shown by Minecraft,
-            copy the dashboard pairing code into the app, then press Start bridge. Keep the app
-            running while you issue commands. The source-code ZIP remains available for Linux and
-            advanced users.
-          </p>
-          <pre className="mt-3 overflow-auto rounded-xl border border-border/70 bg-background/70 p-4 font-mono text-xs leading-relaxed text-muted-foreground">
-            {`1. Minecraft Java → Esc → Open to LAN → Allow Cheats: ON
-2. Open ZeroPulse Companion and enter the LAN port
-3. Dashboard → Relay (anywhere) → copy its pairing code
-4. Paste the same code into Companion → Start bridge
-5. Wait for “Minecraft connected”, then speak`}
-          </pre>
-          <a href="/downloads/zeropulse-bridge.zip" download className="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline"><Terminal className="size-4" /> Download source version (Node.js 18+)</a>
-        </div>
+          <article className="glass rounded-3xl p-6">
+            <div className="flex items-start justify-between">
+              <span className="grid size-12 place-items-center rounded-2xl bg-accent/15 text-accent ring-1 ring-accent/30">
+                <Gamepad2 className="size-6" />
+              </span>
+              <span className="rounded-full bg-accent/10 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-accent">
+                Bedrock + console
+              </span>
+            </div>
+            <h2 className="mt-5 font-display text-2xl font-semibold">Bedrock Gateway kit</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              A configured Geyser/Floodgate gateway kit and setup scripts for Bedrock clients,
+              Xbox, PlayStation, and Nintendo Switch.
+            </p>
+            <button
+              onClick={() => void download("bedrock")}
+              disabled={Boolean(busy)}
+              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-accent/40 bg-accent/10 font-medium text-accent transition hover:bg-accent/20 disabled:opacity-50"
+            >
+              {busy === "download-bedrock" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Download className="size-4" />
+              )}
+              Download Bedrock Gateway
+            </button>
+          </article>
+        </section>
 
-        <div className="glass mt-8 rounded-2xl p-6">
-          <h2 className="font-display text-base font-semibold">Before you open it</h2>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li><span className="text-foreground">Windows:</span> extract the full ZIP, then run <span className="font-mono text-primary">ZeroPulseCompanion.exe</span>.</li>
-            <li><span className="text-foreground">macOS:</span> extract the ZIP, then Control-click the app and choose Open. This preview build is unsigned.</li>
-            <li><span className="text-foreground">Phone/tablet:</span> install the dashboard from the browser; do not download the desktop ZIP to your phone.</li>
-          </ul>
-        </div>
+        <section className="mt-16">
+          <div className="max-w-2xl">
+            <h2 className="font-display text-3xl font-semibold">Console connection hub</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Consoles do not expose a normal custom-server button. These discovery workarounds
+              route the console into your Geyser gateway; they do not replace the local ZeroPulse
+              builder.
+            </p>
+          </div>
+          <Tabs defaultValue="xbox" className="glass mt-6 rounded-3xl p-5 sm:p-7">
+            <TabsList className="grid h-auto w-full grid-cols-3 bg-background/70">
+              {Object.entries(CONSOLE_GUIDES).map(([id, guide]) => (
+                <TabsTrigger key={id} value={id} className="py-2.5">
+                  {guide.title}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {Object.entries(CONSOLE_GUIDES).map(([id, guide]) => (
+              <TabsContent key={id} value={id} className="mt-6">
+                <ol className="grid gap-3">
+                  {guide.steps.map((step, index) => (
+                    <li key={step} className="flex gap-3 rounded-xl border border-border/70 bg-background/50 p-4 text-sm text-muted-foreground">
+                      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/15 font-mono text-xs text-primary">
+                        {index + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </TabsContent>
+            ))}
+          </Tabs>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {[
+              [Network, "LAN discovery", "Console and helper must share a network unless the gateway is hosted."],
+              [ShieldCheck, "Firewall & ports", "Allow Bedrock UDP 19132; only forward it when internet access is intended."],
+              [Smartphone, "Account pairing", "Use a Microsoft account and Floodgate when Bedrock users lack Java accounts."],
+            ].map(([Icon, title, body]) => {
+              const GuideIcon = Icon as typeof Network;
+              return (
+                <div key={String(title)} className="rounded-2xl border border-border/70 bg-secondary/30 p-4">
+                  <GuideIcon className="size-5 text-primary" />
+                  <h3 className="mt-3 text-sm font-medium">{String(title)}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{String(body)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-        <div className="glass mt-8 rounded-2xl p-6">
-          <h2 className="font-display text-base font-semibold">How blocks get placed</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            On spawn the bot probes for operator rights. With cheats or op it builds using{" "}
-            <span className="font-mono text-foreground">/fill</span> and{" "}
-            <span className="font-mono text-foreground">/setblock</span> for near-instant results.
-            Without op it falls back to real hand placement: the creative inventory API loads each
-            block, the bot flies to the spot and clicks the neighbouring face. The dashboard shows
-            which mode is active and reports the exact world coordinates when a build finishes.
-          </p>
-        </div>
+        <section className="mt-20" id="plans">
+          <div className="text-center">
+            <h2 className="font-display text-3xl font-semibold">Builder plans</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Usage resets at midnight UTC. A task is reserved atomically before the build begins.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+            {PLANS.map((plan) => {
+              const selected = hasSubscription && activePlan === plan.id;
+              return (
+                <article
+                  key={plan.id}
+                  className={`relative rounded-3xl border p-6 ${plan.featured ? "border-primary/50 bg-primary/5 shadow-[0_0_40px_hsl(var(--primary)/0.08)]" : "border-border bg-card/50"}`}
+                >
+                  {plan.featured ? (
+                    <span className="absolute right-5 top-5 rounded-full bg-primary px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-primary-foreground">
+                      Most popular
+                    </span>
+                  ) : null}
+                  <plan.icon className="size-6 text-primary" />
+                  <h3 className="mt-5 font-display text-xl font-semibold">{plan.name}</h3>
+                  <div className="mt-3 flex items-end gap-1">
+                    <span className="font-display text-4xl font-semibold tracking-tight">
+                      ${plan.price}
+                    </span>
+                    <span className="pb-1 text-sm text-muted-foreground">/ month</span>
+                  </div>
+                  <p className="mt-2 min-h-10 text-sm text-muted-foreground">{plan.description}</p>
+                  <ul className="mt-5 space-y-2.5 text-sm">
+                    <li className="flex items-center gap-2">
+                      <Check className="size-4 text-success" /> {plan.tasks}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="size-4 text-success" /> {plan.blocks}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="size-4 text-success" /> Secure companion verification
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => void (hasSubscription ? openPortal() : checkout(plan.id))}
+                    disabled={Boolean(busy) || auth.account?.profile.unlimited_tester}
+                    className={`mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-medium transition disabled:opacity-50 ${plan.featured ? "bg-primary text-primary-foreground hover:bg-primary-glow" : "border border-border bg-secondary hover:border-primary/40"}`}
+                  >
+                    {busy === `plan-${plan.id}` || (hasSubscription && busy === "portal") ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : null}
+                    {auth.account?.profile.unlimited_tester
+                      ? "Unlimited tester active"
+                      : selected
+                        ? "Manage current plan"
+                        : hasSubscription
+                          ? "Change in billing portal"
+                          : `Choose ${plan.name}`}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+          {hasSubscription ? (
+            <div className="mt-5 text-center">
+              <button onClick={() => void openPortal()} className="text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
+                Update payment method or cancel in the secure billing portal
+              </button>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="glass mt-16 rounded-3xl p-6 sm:p-8">
+          <h2 className="font-display text-xl font-semibold">Java quick start</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["1", "Download", "Sign in and extract the complete Java companion ZIP."],
+              ["2", "Open LAN", "Enable cheats, open the Java world to LAN, and copy its port."],
+              ["3", "Pair", "Enter the LAN port and dashboard pairing code in the companion."],
+              ["4", "Build", "Wait for Connected, then speak or choose a quick action."],
+            ].map(([number, title, body]) => (
+              <div key={number}>
+                <span className="font-mono text-xs text-primary">{number}</span>
+                <h3 className="mt-2 text-sm font-medium">{title}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
+              </div>
+            ))}
+          </div>
+          <Link to="/world-setup" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+            Open the complete world setup guide
+          </Link>
+        </section>
       </main>
-
       <SiteFooter />
     </div>
   );

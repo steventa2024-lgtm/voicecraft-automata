@@ -1,17 +1,37 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BuildInstruction } from "@/lib/command-parser";
 import { makePairCode, normalizeCode, openRelay, type RelayHandle } from "@/lib/relay";
+import { useAuth } from "@/components/auth-provider";
 
 export type BridgeStatus = "idle" | "connecting" | "bridge" | "connected" | "building" | "error";
 export type TransportKind = "local" | "cloud";
 
+export interface SiteReport {
+  baseY: number;
+  footprint: { width: number; depth: number; height: number };
+  slope: number;
+  excavationBlocks: number;
+  foundationBlocks: number;
+  protectedBlocks: Array<{ block: string; x: number; y: number; z: number }>;
+}
+
 export interface BridgeEvent {
-  type: "status" | "log" | "progress" | "error" | "mode";
+  type: "status" | "log" | "progress" | "error" | "warning" | "mode" | "plan" | "site";
   mode?: string;
-  result?: { placed: number; mode: string; origin: { x: number; y: number; z: number } };
+  result?: {
+    placed: number;
+    skipped?: number;
+    failed?: number;
+    total?: number;
+    mode: string;
+    origin: { x: number; y: number; z: number };
+  };
   status?: Exclude<BridgeStatus, "connecting">;
   message?: string;
   progress?: number;
+  site?: SiteReport;
+  origin?: { x: number; y: number; z: number };
+  deviceId?: string;
 }
 
 export interface Connection {
@@ -46,6 +66,7 @@ function loadConnection(): Connection {
  * bot running on a PC anywhere.
  */
 export function useBridge() {
+  const auth = useAuth();
   const [conn, setConnState] = useState<Connection>(() => ({
     transport: "local",
     url: DEFAULT_URL,
@@ -55,6 +76,7 @@ export function useBridge() {
   const [status, setStatus] = useState<BridgeStatus>("idle");
   const [mode, setMode] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [siteReport, setSiteReport] = useState<SiteReport | null>(null);
   const [events, setEvents] = useState<Array<{ id: number; text: string; kind: string }>>([]);
   const socketRef = useRef<WebSocket | null>(null);
   const relayRef = useRef<RelayHandle | null>(null);
@@ -74,15 +96,29 @@ export function useBridge() {
   const applyEvent = useCallback(
     (data: BridgeEvent) => {
       if (data.status) setStatus(data.status === "idle" ? "bridge" : data.status);
+      if (data.deviceId && typeof window !== "undefined") {
+        window.localStorage.setItem("zeropulse.device-id", data.deviceId);
+      }
       if (data.mode) setMode(data.mode);
+      if (data.site) setSiteReport(data.site);
       if (data.result) {
+        const details = [
+          `${data.result.placed} changed`,
+          data.result.skipped ? `${data.result.skipped} already correct` : "",
+          data.result.failed ? `${data.result.failed} failed` : "",
+        ]
+          .filter(Boolean)
+          .join(", ");
         push(
-          `Placed ${data.result.placed} blocks at ${data.result.origin.x}, ${data.result.origin.y}, ${data.result.origin.z} (${data.result.mode} mode)`,
-          "success",
+          `${details} at ${data.result.origin.x}, ${data.result.origin.y}, ${data.result.origin.z} (${data.result.mode} mode)`,
+          data.result.failed ? "warn" : "success",
         );
       }
       if (typeof data.progress === "number") setProgress(data.progress);
-      if (data.message) push(data.message, data.type === "error" ? "error" : "info");
+      if (data.message) {
+        const kind = data.type === "error" ? "error" : data.type === "warning" ? "warn" : "info";
+        push(data.message, kind);
+      }
     },
     [push],
   );
@@ -174,8 +210,29 @@ export function useBridge() {
   );
 
   const send = useCallback(
-    (instruction: BuildInstruction) => {
-      const payload = { type: "command", instruction };
+    async (instruction: BuildInstruction) => {
+      let runnerToken: string | undefined;
+      if (instruction.action === "build" || instruction.action === "clear") {
+        if (!auth.requireUser()) {
+          push("Sign in before starting a metered build", "warn");
+          return false;
+        }
+        try {
+          const response = await auth.authorizedFetch("/api/builder/token", { method: "POST" });
+          const body = await response.json();
+          if (!response.ok || !body.token) {
+            throw new Error(body.message || "Build authorization could not be created.");
+          }
+          runnerToken = body.token;
+        } catch (error) {
+          push(
+            error instanceof Error ? error.message : "Build authorization could not be created.",
+            "error",
+          );
+          return false;
+        }
+      }
+      const payload = { type: "command", instruction, runnerToken };
       if (relayRef.current && (status === "connected" || status === "building")) {
         relayRef.current.send(payload);
         push(`Relayed → ${instruction.action} ${instruction.structure}`, "success");
@@ -187,10 +244,10 @@ export function useBridge() {
         push(`Dispatched → ${instruction.action} ${instruction.structure}`, "success");
         return true;
       }
-       push("Command not sent — connect the companion and Minecraft first", "warn");
+      push("Command not sent — connect the companion and Minecraft first", "warn");
       return false;
     },
-    [push, status],
+    [auth, push, status],
   );
 
   // Attach automatically using the saved transport.
@@ -205,6 +262,7 @@ export function useBridge() {
     status,
     mode,
     progress,
+    siteReport,
     setProgress,
     events,
     push,
