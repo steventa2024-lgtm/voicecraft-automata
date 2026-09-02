@@ -13,6 +13,21 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as WorldSetupRouteImport } from './routes/world-setup'
+import { Route as AdminKeysRouteImport } from './routes/admin/keys'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as ApiAccountMeRouteImport } from './routes/api/account/me'
+import { Route as ApiAdminKeysRouteImport } from './routes/api/admin/keys'
+import { Route as ApiBillingCheckoutRouteImport } from './routes/api/billing/checkout'
+import { Route as ApiBillingPortalRouteImport } from './routes/api/billing/portal'
+import { Route as ApiBillingWebhookRouteImport } from './routes/api/billing/webhook'
+import { Route as ApiBuilderTokenRouteImport } from './routes/api/builder/token'
+import { Route as ApiBuilderVerifyRunRouteImport } from './routes/api/builder/verify-run'
+import { Route as ApiDownloadFilesBedrockRouteImport } from './routes/api/download-files/bedrock'
+import { Route as ApiDownloadFilesJavaRouteImport } from './routes/api/download-files/java'
+import { Route as ApiDownloadsBedrockRouteImport } from './routes/api/downloads/bedrock'
+import { Route as ApiDownloadsJavaRouteImport } from './routes/api/downloads/java'
+import { Route as ApiLicenseRedeemRouteImport } from './routes/api/license/redeem'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +49,123 @@ const WorldSetupRoute = WorldSetupRouteImport.update({
   path: '/world-setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminKeysRoute = AdminKeysRouteImport.update({
+  id: '/admin/keys',
+  path: '/admin/keys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAccountMeRoute = ApiAccountMeRouteImport.update({
+  id: '/api/account/me',
+  path: '/api/account/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminKeysRoute = ApiAdminKeysRouteImport.update({
+  id: '/api/admin/keys',
+  path: '/api/admin/keys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBillingCheckoutRoute = ApiBillingCheckoutRouteImport.update({
+  id: '/api/billing/checkout',
+  path: '/api/billing/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBillingPortalRoute = ApiBillingPortalRouteImport.update({
+  id: '/api/billing/portal',
+  path: '/api/billing/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBillingWebhookRoute = ApiBillingWebhookRouteImport.update({
+  id: '/api/billing/webhook',
+  path: '/api/billing/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBuilderTokenRoute = ApiBuilderTokenRouteImport.update({
+  id: '/api/builder/token',
+  path: '/api/builder/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBuilderVerifyRunRoute = ApiBuilderVerifyRunRouteImport.update({
+  id: '/api/builder/verify-run',
+  path: '/api/builder/verify-run',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDownloadFilesBedrockRoute = ApiDownloadFilesBedrockRouteImport.update({
+  id: '/api/download-files/bedrock',
+  path: '/api/download-files/bedrock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDownloadFilesJavaRoute = ApiDownloadFilesJavaRouteImport.update({
+  id: '/api/download-files/java',
+  path: '/api/download-files/java',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDownloadsBedrockRoute = ApiDownloadsBedrockRouteImport.update({
+  id: '/api/downloads/bedrock',
+  path: '/api/downloads/bedrock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDownloadsJavaRoute = ApiDownloadsJavaRouteImport.update({
+  id: '/api/downloads/java',
+  path: '/api/downloads/java',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLicenseRedeemRoute = ApiLicenseRedeemRouteImport.update({
+  id: '/api/license/redeem',
+  path: '/api/license/redeem',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe-webhook',
+  path: '/api/public/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/download': typeof DownloadRoute
   '/world-setup': typeof WorldSetupRoute
+  '/admin/keys': typeof AdminKeysRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/api/account/me': typeof ApiAccountMeRoute
+  '/api/admin/keys': typeof ApiAdminKeysRoute
+  '/api/billing/checkout': typeof ApiBillingCheckoutRoute
+  '/api/billing/portal': typeof ApiBillingPortalRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
+  '/api/builder/token': typeof ApiBuilderTokenRoute
+  '/api/builder/verify-run': typeof ApiBuilderVerifyRunRoute
+  '/api/download-files/bedrock': typeof ApiDownloadFilesBedrockRoute
+  '/api/download-files/java': typeof ApiDownloadFilesJavaRoute
+  '/api/downloads/bedrock': typeof ApiDownloadsBedrockRoute
+  '/api/downloads/java': typeof ApiDownloadsJavaRoute
+  '/api/license/redeem': typeof ApiLicenseRedeemRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/download': typeof DownloadRoute
   '/world-setup': typeof WorldSetupRoute
+  '/admin/keys': typeof AdminKeysRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/api/account/me': typeof ApiAccountMeRoute
+  '/api/admin/keys': typeof ApiAdminKeysRoute
+  '/api/billing/checkout': typeof ApiBillingCheckoutRoute
+  '/api/billing/portal': typeof ApiBillingPortalRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
+  '/api/builder/token': typeof ApiBuilderTokenRoute
+  '/api/builder/verify-run': typeof ApiBuilderVerifyRunRoute
+  '/api/download-files/bedrock': typeof ApiDownloadFilesBedrockRoute
+  '/api/download-files/java': typeof ApiDownloadFilesJavaRoute
+  '/api/downloads/bedrock': typeof ApiDownloadsBedrockRoute
+  '/api/downloads/java': typeof ApiDownloadsJavaRoute
+  '/api/license/redeem': typeof ApiLicenseRedeemRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +173,86 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/download': typeof DownloadRoute
   '/world-setup': typeof WorldSetupRoute
+  '/admin/keys': typeof AdminKeysRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/api/account/me': typeof ApiAccountMeRoute
+  '/api/admin/keys': typeof ApiAdminKeysRoute
+  '/api/billing/checkout': typeof ApiBillingCheckoutRoute
+  '/api/billing/portal': typeof ApiBillingPortalRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
+  '/api/builder/token': typeof ApiBuilderTokenRoute
+  '/api/builder/verify-run': typeof ApiBuilderVerifyRunRoute
+  '/api/download-files/bedrock': typeof ApiDownloadFilesBedrockRoute
+  '/api/download-files/java': typeof ApiDownloadFilesJavaRoute
+  '/api/downloads/bedrock': typeof ApiDownloadsBedrockRoute
+  '/api/downloads/java': typeof ApiDownloadsJavaRoute
+  '/api/license/redeem': typeof ApiLicenseRedeemRoute
+  '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/download' | '/world-setup'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/download'
+    | '/world-setup'
+    | '/admin/keys'
+    | '/auth/callback'
+    | '/api/account/me'
+    | '/api/admin/keys'
+    | '/api/billing/checkout'
+    | '/api/billing/portal'
+    | '/api/billing/webhook'
+    | '/api/builder/token'
+    | '/api/builder/verify-run'
+    | '/api/download-files/bedrock'
+    | '/api/download-files/java'
+    | '/api/downloads/bedrock'
+    | '/api/downloads/java'
+    | '/api/license/redeem'
+    | '/api/public/stripe-webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/download' | '/world-setup'
-  id: '__root__' | '/' | '/dashboard' | '/download' | '/world-setup'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/download'
+    | '/world-setup'
+    | '/admin/keys'
+    | '/auth/callback'
+    | '/api/account/me'
+    | '/api/admin/keys'
+    | '/api/billing/checkout'
+    | '/api/billing/portal'
+    | '/api/billing/webhook'
+    | '/api/builder/token'
+    | '/api/builder/verify-run'
+    | '/api/download-files/bedrock'
+    | '/api/download-files/java'
+    | '/api/downloads/bedrock'
+    | '/api/downloads/java'
+    | '/api/license/redeem'
+    | '/api/public/stripe-webhook'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/download'
+    | '/world-setup'
+    | '/admin/keys'
+    | '/auth/callback'
+    | '/api/account/me'
+    | '/api/admin/keys'
+    | '/api/billing/checkout'
+    | '/api/billing/portal'
+    | '/api/billing/webhook'
+    | '/api/builder/token'
+    | '/api/builder/verify-run'
+    | '/api/download-files/bedrock'
+    | '/api/download-files/java'
+    | '/api/downloads/bedrock'
+    | '/api/downloads/java'
+    | '/api/license/redeem'
+    | '/api/public/stripe-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +260,21 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DownloadRoute: typeof DownloadRoute
   WorldSetupRoute: typeof WorldSetupRoute
+  AdminKeysRoute: typeof AdminKeysRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  ApiAccountMeRoute: typeof ApiAccountMeRoute
+  ApiAdminKeysRoute: typeof ApiAdminKeysRoute
+  ApiBillingCheckoutRoute: typeof ApiBillingCheckoutRoute
+  ApiBillingPortalRoute: typeof ApiBillingPortalRoute
+  ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
+  ApiBuilderTokenRoute: typeof ApiBuilderTokenRoute
+  ApiBuilderVerifyRunRoute: typeof ApiBuilderVerifyRunRoute
+  ApiDownloadFilesBedrockRoute: typeof ApiDownloadFilesBedrockRoute
+  ApiDownloadFilesJavaRoute: typeof ApiDownloadFilesJavaRoute
+  ApiDownloadsBedrockRoute: typeof ApiDownloadsBedrockRoute
+  ApiDownloadsJavaRoute: typeof ApiDownloadsJavaRoute
+  ApiLicenseRedeemRoute: typeof ApiLicenseRedeemRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +307,111 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorldSetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/keys': {
+      id: '/admin/keys'
+      path: '/admin/keys'
+      fullPath: '/admin/keys'
+      preLoaderRoute: typeof AdminKeysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/account/me': {
+      id: '/api/account/me'
+      path: '/api/account/me'
+      fullPath: '/api/account/me'
+      preLoaderRoute: typeof ApiAccountMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/keys': {
+      id: '/api/admin/keys'
+      path: '/api/admin/keys'
+      fullPath: '/api/admin/keys'
+      preLoaderRoute: typeof ApiAdminKeysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/billing/checkout': {
+      id: '/api/billing/checkout'
+      path: '/api/billing/checkout'
+      fullPath: '/api/billing/checkout'
+      preLoaderRoute: typeof ApiBillingCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/billing/portal': {
+      id: '/api/billing/portal'
+      path: '/api/billing/portal'
+      fullPath: '/api/billing/portal'
+      preLoaderRoute: typeof ApiBillingPortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/billing/webhook': {
+      id: '/api/billing/webhook'
+      path: '/api/billing/webhook'
+      fullPath: '/api/billing/webhook'
+      preLoaderRoute: typeof ApiBillingWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/builder/token': {
+      id: '/api/builder/token'
+      path: '/api/builder/token'
+      fullPath: '/api/builder/token'
+      preLoaderRoute: typeof ApiBuilderTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/builder/verify-run': {
+      id: '/api/builder/verify-run'
+      path: '/api/builder/verify-run'
+      fullPath: '/api/builder/verify-run'
+      preLoaderRoute: typeof ApiBuilderVerifyRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/download-files/bedrock': {
+      id: '/api/download-files/bedrock'
+      path: '/api/download-files/bedrock'
+      fullPath: '/api/download-files/bedrock'
+      preLoaderRoute: typeof ApiDownloadFilesBedrockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/download-files/java': {
+      id: '/api/download-files/java'
+      path: '/api/download-files/java'
+      fullPath: '/api/download-files/java'
+      preLoaderRoute: typeof ApiDownloadFilesJavaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/downloads/bedrock': {
+      id: '/api/downloads/bedrock'
+      path: '/api/downloads/bedrock'
+      fullPath: '/api/downloads/bedrock'
+      preLoaderRoute: typeof ApiDownloadsBedrockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/downloads/java': {
+      id: '/api/downloads/java'
+      path: '/api/downloads/java'
+      fullPath: '/api/downloads/java'
+      preLoaderRoute: typeof ApiDownloadsJavaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/license/redeem': {
+      id: '/api/license/redeem'
+      path: '/api/license/redeem'
+      fullPath: '/api/license/redeem'
+      preLoaderRoute: typeof ApiLicenseRedeemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stripe-webhook': {
+      id: '/api/public/stripe-webhook'
+      path: '/api/public/stripe-webhook'
+      fullPath: '/api/public/stripe-webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +420,21 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DownloadRoute: DownloadRoute,
   WorldSetupRoute: WorldSetupRoute,
+  AdminKeysRoute: AdminKeysRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  ApiAccountMeRoute: ApiAccountMeRoute,
+  ApiAdminKeysRoute: ApiAdminKeysRoute,
+  ApiBillingCheckoutRoute: ApiBillingCheckoutRoute,
+  ApiBillingPortalRoute: ApiBillingPortalRoute,
+  ApiBillingWebhookRoute: ApiBillingWebhookRoute,
+  ApiBuilderTokenRoute: ApiBuilderTokenRoute,
+  ApiBuilderVerifyRunRoute: ApiBuilderVerifyRunRoute,
+  ApiDownloadFilesBedrockRoute: ApiDownloadFilesBedrockRoute,
+  ApiDownloadFilesJavaRoute: ApiDownloadFilesJavaRoute,
+  ApiDownloadsBedrockRoute: ApiDownloadsBedrockRoute,
+  ApiDownloadsJavaRoute: ApiDownloadsJavaRoute,
+  ApiLicenseRedeemRoute: ApiLicenseRedeemRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

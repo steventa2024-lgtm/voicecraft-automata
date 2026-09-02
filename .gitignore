@@ -30,3 +30,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.zeropulse-device-id
+
+# Packaged companion artifacts are uploaded to private R2, never served from git/public.
+private/downloads/*.zip
+private/downloads/archive/
+dist-desktop/
+.desktop-stage/
+bedrock-companion/Geyser-Standalone.jar
+bedrock-companion/config.yml
