@@ -14,16 +14,185 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
+      daily_usage: {
+        Row: {
+          block_count: number
+          task_count: number
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          block_count?: number
+          task_count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          block_count?: number
+          task_count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_keys: {
+        Row: {
+          activated_at: string | null
+          claimed_by_user_id: string | null
+          created_at: string
+          created_by_user_id: string | null
+          hwid_hash: string | null
+          id: string
+          key_hash: string
+          key_hint: string
+          revoked_at: string | null
+          status: Database["public"]["Enums"]["license_key_status"]
+        }
+        Insert: {
+          activated_at?: string | null
+          claimed_by_user_id?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          hwid_hash?: string | null
+          id?: string
+          key_hash: string
+          key_hint: string
+          revoked_at?: string | null
+          status?: Database["public"]["Enums"]["license_key_status"]
+        }
+        Update: {
+          activated_at?: string | null
+          claimed_by_user_id?: string | null
+          created_at?: string
+          created_by_user_id?: string | null
+          hwid_hash?: string | null
+          id?: string
+          key_hash?: string
+          key_hint?: string
+          revoked_at?: string | null
+          status?: Database["public"]["Enums"]["license_key_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_keys_claimed_by_user_id_fkey"
+            columns: ["claimed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_keys_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          daily_usage_counter: Json
+          email: string | null
+          id: string
+          is_admin: boolean
+          plan_tier: Database["public"]["Enums"]["plan_tier"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string
+          unlimited_tester: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_usage_counter?: Json
+          email?: string | null
+          id: string
+          is_admin?: boolean
+          plan_tier?: Database["public"]["Enums"]["plan_tier"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
+          unlimited_tester?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_usage_counter?: Json
+          email?: string | null
+          id?: string
+          is_admin?: boolean
+          plan_tier?: Database["public"]["Enums"]["plan_tier"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
+          unlimited_tester?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stripe_webhook_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          processed_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          processed_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      redeem_license_key: {
+        Args: { p_hwid_hash: string; p_key_hash: string; p_user_id: string }
+        Returns: Json
+      }
+      revoke_license_key: { Args: { p_key_id: string }; Returns: Json }
+      verify_and_consume_builder_run: {
+        Args: { p_requested_blocks: number; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
-      [_ in never]: never
+      license_key_status: "available" | "claimed" | "revoked"
+      plan_tier: "starter" | "builder_pro" | "architect"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +319,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      license_key_status: ["available", "claimed", "revoked"],
+      plan_tier: ["starter", "builder_pro", "architect"],
+    },
   },
 } as const
