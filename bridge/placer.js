@@ -11,6 +11,7 @@ import {
   assertBlockId,
   executeOperations,
   isProtectedBlock,
+  partitionProtectedTargets,
   toFillRuns,
 } from "../packages/protocol/src/index.js";
 
@@ -201,10 +202,13 @@ export async function placeBlocks(bot, blocks, origin, job, onProgress, mode) {
         block: block.block,
       }))
     : blocks;
+  const guarded = partitionProtectedTargets(world, (block) => bot.blockAt?.(new Vec3(block.x, block.y, block.z))?.name ?? null);
   const chosen = mode ?? (await detectMode(bot));
-  if (chosen === "creative") return placeWithCreative(bot, world, job, onProgress);
-  if (chosen !== "command") {
-    throw new Error("No supported placement mode is available.");
-  }
-  return placeWithCommands(bot, world, job, onProgress);
+  const placed = chosen === "creative"
+    ? await placeWithCreative(bot, guarded.place, job, onProgress)
+    : chosen === "command"
+      ? await placeWithCommands(bot, guarded.place, job, onProgress)
+      : null;
+  if (!placed) throw new Error("No supported placement mode is available.");
+  return { ...placed, skipped: (placed.skipped || 0) + guarded.skipped.length, protectedSkipped: guarded.skipped.length };
 }

@@ -15,7 +15,7 @@ import { detectMode, placeBlocks } from "./placer.js";
 import { createBridgeRuntime } from "./runtime.js";
 import { startRelay } from "./relay.js";
 import { openStore } from "./store.js";
-import { evaluateChatCommand, parseCommand, worldPosition } from "../packages/protocol/src/index.js";
+import { evaluateChatCommand, parseCommand, partitionProtectedTargets, worldPosition } from "../packages/protocol/src/index.js";
 
 const HOST = process.env.BRIDGE_HOST || "127.0.0.1";
 const PORT = Number(process.env.BRIDGE_PORT || 8765);
@@ -110,14 +110,19 @@ const runtime = createBridgeRuntime({
     const worldBlocks = plan.blocks.map((block) =>
       worldPosition(origin, block, instruction.rotation || 0, instruction.dimensions.width, instruction.dimensions.depth),
     );
+    const guarded = partitionProtectedTargets(worldBlocks, (block) => bot.blockAt(new Vec3(block.x, block.y, block.z))?.name ?? null);
+    if (guarded.skipped.length > 0 && instruction.protectedBlockPolicy !== "skip") {
+      throw new Error(`${guarded.skipped.length} protected blocks are inside this build. It was not started.`);
+    }
+    const blocksToPlace = guarded.place;
     const startedAt = new Date().toISOString();
     const snapshot = [];
-    for (const block of worldBlocks.slice(0, 20_000)) {
+    for (const block of blocksToPlace.slice(0, 20_000)) {
       if (job.cancelled) break;
       const current = bot.blockAt(new Vec3(block.x, block.y, block.z));
       snapshot.push({ x: block.x, y: block.y, z: block.z, before: current?.name || "air", after: block.block });
     }
-    const result = await placeBlocks(bot, worldBlocks, null, job, onProgress, placementMode);
+    const result = await placeBlocks(bot, blocksToPlace, null, job, onProgress, placementMode);
     store.recordBuild(
       {
         worldKey: worldKey(),
@@ -130,9 +135,9 @@ const runtime = createBridgeRuntime({
         placed: result.placed,
         failed: result.failed,
         startedAt,
-        note: snapshot.length === worldBlocks.length ? null : "Undo covers the first 20,000 blocks only.",
+        note: snapshot.length === blocksToPlace.length ? null : "Undo covers the first 20,000 blocks only.",
       },
-      snapshot.length === worldBlocks.length ? snapshot : [],
+      snapshot.length === blocksToPlace.length ? snapshot : [],
     );
     return result;
   },

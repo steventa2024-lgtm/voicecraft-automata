@@ -43,14 +43,18 @@ import {
 } from "./src/lib/cloud";
 import { theme as c } from "./src/theme";
 import { Button, Card, Field, Footprint, Note, Status } from "./src/ui";
+import { CatalogScreen } from "./src/catalog";
+import { PcScreen } from "./src/pc";
 
-type Tab = "home" | "build" | "console" | "library" | "settings";
+type Tab = "home" | "build" | "console" | "library" | "catalog" | "pc" | "settings";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "home", label: "Home" },
   { id: "build", label: "Build" },
   { id: "console", label: "Console" },
   { id: "library", label: "Library" },
+  { id: "catalog", label: "Catalog" },
+  { id: "pc", label: "My PC" },
   { id: "settings", label: "Settings" },
 ];
 
@@ -414,6 +418,10 @@ function Root() {
           </View>
         ) : null}
 
+        {tab === "catalog" ? <CatalogScreen /> : null}
+
+        {tab === "pc" ? <PcScreen /> : null}
+
         {tab === "settings" ? (
           <View style={styles.stack}>
             <Text style={styles.kicker}>SETTINGS</Text>
@@ -447,7 +455,7 @@ function Root() {
           </View>
         ) : null}
       </ScrollView>
-      <View style={styles.tabs}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabs} contentContainerStyle={styles.tabRow}>
         {tabs.map((item) => (
           <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: tab === item.id }} onPress={() => {
             setTab(item.id);
@@ -456,7 +464,7 @@ function Root() {
             <Text style={[styles.tabText, tab === item.id && styles.tabOn]}>{item.label}</Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -486,13 +494,13 @@ const styles = StyleSheet.create({
   cardTitle: { color: c.text, fontSize: 18, fontWeight: "700" },
   sub: { color: c.muted },
   tabs: {
-    flexDirection: "row",
     borderTopColor: c.border,
     borderTopWidth: 1,
     backgroundColor: "#0b1220",
-    paddingBottom: 8,
+    flexGrow: 0,
   },
-  tab: { flex: 1, alignItems: "center", paddingVertical: 12 },
+  tabRow: { paddingBottom: 8 },
+  tab: { alignItems: "center", paddingVertical: 12, paddingHorizontal: 14 },
   tabText: { color: c.muted, fontSize: 12, fontWeight: "700" },
   tabOn: { color: c.blue },
 });

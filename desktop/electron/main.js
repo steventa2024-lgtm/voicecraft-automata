@@ -10,6 +10,7 @@ import { openStore } from "../../bridge/store.js";
 import { exportBlueprint, importBlueprint } from "../../packages/protocol/src/blueprints.js";
 import { createPkce } from "../../packages/protocol/src/security.js";
 import { externalUrl, mergeSettings, publicSettings, scrubChildEnv, senderAllowed, validateInvoke } from "./policy.js";
+import { createCompanion } from "./companion.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEV_PORT = Number(process.env.ZP_DESKTOP_PORT || 5173);
@@ -22,6 +23,8 @@ let bridgeSocket = null;
 let authToken = "";
 const memorySession = { current: null };
 const jobs = new Map();
+let planWaiter = null;
+let activeJob = null;
 
 function userData() {
   return app.getPath("userData");
@@ -167,6 +170,47 @@ async function runnerToken() {
   return body.token;
 }
 
+const companion = createCompanion({
+  version: app.getVersion(),
+  bridgeRunning: () => Boolean(bridgeSocket && bridgeSocket.readyState === 1),
+  activeJob: () => activeJob,
+  accountEmail: () => loadSession()?.email || null,
+  approve: async (instruction, plan) => {
+    if (!bridgeSocket || bridgeSocket.readyState !== 1) throw new Error("The Minecraft bridge is not running on this PC.");
+    const event = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        planWaiter = null;
+        reject(new Error("The desktop did not prepare a build plan."));
+      }, 8000);
+      planWaiter = (next) => {
+        clearTimeout(timer);
+        resolve(next);
+      };
+      try {
+        bridgeCommand({ type: "command", instruction: { ...instruction, raw: instruction.templateId, approved: false } });
+      } catch (error) {
+        clearTimeout(timer);
+        planWaiter = null;
+        reject(error);
+      }
+    });
+    if (event.fingerprint !== plan.fingerprint || event.count !== plan.count) {
+      throw new Error("The bridge plan did not match the approved preview.");
+    }
+    const token = await runnerToken();
+    bridgeCommand({ type: "approve", jobId: event.jobId, runnerToken: token });
+    return { ok: true, jobId: event.jobId, count: plan.count };
+  },
+  control: async (action) => {
+    if (action === "undo" || action === "redo") {
+      const token = await runnerToken();
+      bridgeCommand({ type: action, runnerToken: token });
+      return;
+    }
+    bridgeCommand({ type: action });
+  },
+});
+
 function bridgeCommand(payload) {
   if (!bridgeSocket || bridgeSocket.readyState !== 1) throw new Error("The local bridge is not running.");
   bridgeSocket.send(JSON.stringify(payload));
@@ -239,7 +283,20 @@ function connectBridge(port) {
   socket.addEventListener("open", () => socket.send(JSON.stringify({ type: "auth", token: authToken })));
   socket.addEventListener("message", (event) => {
     try {
-      send({ type: "bridge-event", event: JSON.parse(String(event.data)) });
+      const parsed = JSON.parse(String(event.data));
+      if (parsed.type === "plan" && planWaiter) {
+        const waiter = planWaiter;
+        planWaiter = null;
+        waiter(parsed);
+      }
+      if (parsed.type === "progress" || parsed.status || parsed.type === "result") {
+        activeJob = {
+          status: parsed.status || parsed.type,
+          progress: typeof parsed.progress === "number" ? parsed.progress : null,
+          count: parsed.count || null,
+        };
+      }
+      send({ type: "bridge-event", event: parsed });
     } catch {
       send({ type: "log", message: "Ignored an unreadable bridge event." });
     }
@@ -268,6 +325,8 @@ function previewFrom(input) {
       limited: plan.blocks.length > 15_000,
       bounds: plan.bounds,
       materials: plan.materials,
+      fingerprint: plan.fingerprint,
+      warnings: plan.warnings,
       description: describeInstruction(instruction),
     };
   } catch (error) {
@@ -365,7 +424,7 @@ async function handle(channel, payload) {
   }
   if (channel === "bridge.command") {
     const preview = previewFrom(payload);
-    if (preview.instruction?.raw) {
+    if (preview.instruction?.raw || preview.instruction?.templateId) {
       try {
         bridgeCommand({ type: "command", instruction: { ...preview.instruction, approved: false } });
       } catch (error) {
@@ -444,6 +503,8 @@ async function handle(channel, payload) {
           dimensions: { width: row.width, depth: row.depth, height: row.height },
           favorite: Boolean(row.favorite),
           notes: row.notes,
+          templateId: row.template_id || undefined,
+          templateOptions: row.template_options ? JSON.parse(row.template_options) : undefined,
         }),
       };
     } finally {
@@ -498,6 +559,11 @@ async function handle(channel, payload) {
     if (!plan.ok) throw new Error(plan.error);
     return plan;
   }
+  if (channel === "companion.status") return companion.status();
+  if (channel === "companion.arm") return companion.arm();
+  if (channel === "companion.permissions") return companion.setPermissions(payload);
+  if (channel === "companion.revoke") return companion.revoke(payload.deviceId);
+  if (channel === "companion.stop") return companion.stop();
   if (channel === "shell.open") {
     const target = externalUrl(readSettings().appOrigin, payload.path);
     if (!target) throw new Error("The account website is not configured, or the page is not on that site.");

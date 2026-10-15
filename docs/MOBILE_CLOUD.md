@@ -114,13 +114,21 @@ A computer you already own can run the API and worker. Add memory for a Paper wo
 
 `node --test tests/cloud-api.test.js` covers health honesty, one-time pairing, preview isolation, entitlement rejection, idempotent confirm, failed-host refunds, cancellation, and transcription refusal. It does not open a Minecraft port.
 
+## PC companion
+
+The desktop app can pair a phone on the same private network from Mobile Companion. Pairing uses a one-time code that expires after five minutes. The phone then receives a session token stored only on the device. Remote build, pause, resume, cancel, and undo requests go through the desktop bridge and still require the desktop account's build authorization. Remote builds stay off until the PC owner enables them.
+
+The phone cannot send shell commands, files, or a generic Minecraft command. Live Windows screen sharing and remote mouse input are not implemented. Expo Go has no supported way to pin a self-signed certificate or capture the Windows desktop, so those controls stay disabled and report that they are unavailable. The companion request itself is private-network HTTP and is not encrypted. Pair it only on a Wi-Fi network you trust. A public address is rejected.
+
+The catalog of 50 structures is the same generator on desktop and mobile. A phone preview is an isometric drawing of that voxel plan. It is not a live 3D orbit and not an in-world hologram. Approving a template asks the PC to rebuild the plan and reject the approval when the fingerprint differs.
+
 ## iPhone
 
 ```sh
 cd mobile && npm install && npx expo start
 ```
 
-Install Expo Go matching this SDK, then scan the QR code. That scan is the one physical step. It had not been done when this document was written.
+Install Expo Go matching this SDK, then scan the QR code. Sign-in, the command center, console navigation, and the development API health check have been confirmed on a physical iPhone. A completed Minecraft build has not.
 
 ## Android
 

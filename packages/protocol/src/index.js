@@ -15,3 +15,12 @@ export * from "./blueprints.js";
 export * from "./ollama.js";
 export * from "./execution.js";
 export { GENERATORS, generateStructure } from "./generators.js";
+export { listTemplates, templateById, generateTemplate, isometricPreview } from "./templates.js";
+export {
+  planFingerprint,
+  rotateBlocks,
+  mirrorBlocks,
+  replaceMaterial,
+  approvalSnapshot,
+  assertSamePlan,
+} from "./blueprint-edit.js";

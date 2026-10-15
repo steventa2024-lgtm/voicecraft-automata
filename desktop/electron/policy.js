@@ -27,6 +27,11 @@ const CHANNELS = new Set([
   "devices.approve",
   "devices.revoke",
   "devices.list",
+  "companion.status",
+  "companion.arm",
+  "companion.permissions",
+  "companion.revoke",
+  "companion.stop",
   "shell.open",
   "app.info",
 ]);
@@ -67,8 +72,19 @@ export function validateInvoke(channel, payload = {}) {
   const input = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
   if (channel === "bridge.command") {
     const text = String(input.text || "");
+    const templateId = input.instruction?.templateId;
+    if (templateId) {
+      if (!/^[a-z0-9-]{3,80}$/.test(String(templateId))) return { ok: false, error: "Choose a structure template." };
+      return { ok: true, channel, payload: { text: text.trim().slice(0, 500), instruction: input.instruction } };
+    }
     if (!text.trim() || text.length > 500) return { ok: false, error: "Enter a command under 500 characters." };
     return { ok: true, channel, payload: { text: text.trim(), instruction: input.instruction || null } };
+  }
+  if (channel === "companion.permissions") {
+    return { ok: true, channel, payload: { build: input.build === true, view: false, input: false } };
+  }
+  if (channel === "companion.revoke") {
+    return { ok: true, channel, payload: { deviceId: String(input.deviceId || "").slice(0, 80) } };
   }
   if (channel === "bridge.approve" || channel === "history.undo" || channel === "history.redo") {
     return { ok: true, channel, payload: { jobId: String(input.jobId || "") } };

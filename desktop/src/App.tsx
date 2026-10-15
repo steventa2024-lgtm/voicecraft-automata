@@ -2,15 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { planToInstruction } from "../../packages/protocol/src/ollama.js";
 import { describeInstruction, parseCommand } from "../../packages/protocol/src/parser.js";
 import { buildPlan } from "../../packages/protocol/src/plan.js";
+import { Catalog } from "./catalog";
+import { CompanionPanel } from "./companion";
 import { VoxelPreview } from "./preview";
 import type { AccountState, BridgeEvent, PreviewResult } from "./types";
 
-type Section = "home" | "studio" | "library" | "history" | "connections" | "settings";
+type Section = "home" | "studio" | "catalog" | "library" | "companion" | "history" | "connections" | "settings";
 
 const NAV: Array<{ id: Section; label: string }> = [
   { id: "home", label: "Home" },
   { id: "studio", label: "Build Studio" },
+  { id: "catalog", label: "Catalog" },
   { id: "library", label: "Blueprints" },
+  { id: "companion", label: "Companion" },
   { id: "history", label: "History" },
   { id: "connections", label: "Connections" },
   { id: "settings", label: "Settings" },
@@ -56,6 +60,7 @@ export function App() {
   const [log, setLog] = useState<string[]>(["Desktop dashboard loaded from local files."]);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [jobId, setJobId] = useState("");
+  const [planWarnings, setPlanWarnings] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -69,7 +74,10 @@ export function App() {
       if (inner.status) setExecutor(inner.status);
       if (typeof inner.progress === "number") setProgress(inner.progress);
       if (inner.type === "mode") setMinecraft(inner.message || inner.mode || "Minecraft responded");
-      if (inner.type === "plan" && inner.jobId) setJobId(inner.jobId);
+      if (inner.type === "plan" && inner.jobId) {
+        setJobId(inner.jobId);
+        setPlanWarnings(Array.isArray(inner.warnings) ? inner.warnings.filter((warning) => typeof warning === "string") : []);
+      }
       if (inner.status === "connected") setMinecraft("Bot is in the world");
       if (inner.type === "error" && inner.message) setError(inner.message);
     });
@@ -156,7 +164,32 @@ export function App() {
               }}
             />
           ) : null}
-          {section === "library" ? <Library onUse={(text) => { setSection("studio"); void localPreview(text); setPreview(localPreview(text)); }} /> : null}
+          {section === "catalog" ? (
+            <Catalog
+              bridgeRunning={bridgeRunning}
+              jobId={jobId}
+              planWarnings={planWarnings}
+              onPrepare={async (instruction, description) => {
+                setError("");
+                setJobId("");
+                setPlanWarnings([]);
+                const remote = await call<PreviewResult>("bridge.command", { text: description, instruction });
+                setPreview({ ...remote, description: remote.description || description });
+              }}
+              onApprove={async () => {
+                if (!jobId) {
+                  setError("Prepare the blueprint and wait for the bridge job before approving.");
+                  return;
+                }
+                await call("bridge.approve", { jobId });
+              }}
+              onPause={() => void call("bridge.pause").catch((reason) => setError(String(reason)))}
+              onResume={() => void call("bridge.resume").catch((reason) => setError(String(reason)))}
+              onCancel={() => void call("bridge.cancel").catch((reason) => setError(String(reason)))}
+            />
+          ) : null}
+          {section === "library" ? <Library onUse={(text) => { setSection("studio"); setPreview(localPreview(text)); }} /> : null}
+          {section === "companion" ? <CompanionPanel /> : null}
           {section === "history" ? <History onError={setError} /> : null}
           {section === "connections" ? (
             <Connections

@@ -63,11 +63,13 @@ export function createBridgeRuntime(options) {
       jobId: id,
       instruction,
       count: plan.count,
+      fingerprint: plan.fingerprint,
+      templateId: plan.templateId || null,
       bounds: plan.bounds,
       materials: plan.materials,
       origin: { x: origin.x, y: origin.y, z: origin.z },
       site,
-      warnings: [...(instruction.warnings || []), ...(site?.warnings || []), ...(boundsError ? [boundsError] : [])],
+      warnings: [...(instruction.warnings || []), ...(plan.warnings || []), ...(site?.warnings || []), ...(boundsError ? [boundsError] : [])],
       executable: !boundsError && instruction.valid,
     });
     return { jobId: id, plan, origin, site, boundsError };
@@ -77,6 +79,15 @@ export function createBridgeRuntime(options) {
     const job = pending.get(jobId);
     if (!job) {
       emit({ type: "error", message: "There is no pending build to approve." });
+      return { ok: false };
+    }
+    const rebuilt = buildPlan(
+      job.instruction.action === "clear"
+        ? job.instruction
+        : { ...job.instruction, action: "build", valid: true },
+    );
+    if (rebuilt.fingerprint !== job.plan.fingerprint || rebuilt.count !== job.plan.count) {
+      emit({ type: "error", message: "The approved plan no longer matches the preview. Generate it again." });
       return { ok: false };
     }
     if (job.boundsError || worldBoundsError(job.origin.y, job.plan.bounds.height)) {
