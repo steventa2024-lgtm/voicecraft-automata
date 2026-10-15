@@ -1,0 +1,68 @@
+# Self-hosted VoiceCraft cloud. This does not start a Minecraft world unless
+# you opt in with `--profile minecraft` and accept the Minecraft EULA yourself.
+services:
+  cloud-api:
+    image: node:22-bookworm
+    working_dir: /app
+    command: node services/cloud-api/src/server.js
+    volumes:
+      - ../..:/app
+      - cloud-data:/data
+    environment:
+      ZP_CLOUD_DATA: /data
+      CLOUD_BIND: 0.0.0.0
+      PORT: 8787
+      CLOUD_SERVER_TOKEN: ${CLOUD_SERVER_TOKEN:?set a long random server token}
+      CLOUD_PAIR_PEPPER: ${CLOUD_PAIR_PEPPER:?set a long random pairing pepper}
+      CLOUD_LOCAL_ACCOUNTS: ${CLOUD_LOCAL_ACCOUNTS:-0}
+      VOICECRAFT_SITE_URL: ${VOICECRAFT_SITE_URL:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
+      PUBLIC_BEDROCK_HOST: ${PUBLIC_BEDROCK_HOST:-}
+      PUBLIC_BEDROCK_PORT: ${PUBLIC_BEDROCK_PORT:-19132}
+      MC_HOST: minecraft
+      MC_PORT: 25565
+      OLLAMA_URL: ${OLLAMA_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-}
+      WHISPER_CPP: ${WHISPER_CPP:-}
+      WHISPER_MODEL: ${WHISPER_MODEL:-}
+    ports:
+      - "127.0.0.1:8787:8787"
+
+  build-worker:
+    image: node:22-bookworm
+    working_dir: /app
+    command: node services/build-worker/index.js
+    volumes:
+      - ../..:/app
+      - cloud-data:/data
+    environment:
+      ZP_CLOUD_DATA: /data
+      CLOUD_PAIR_PEPPER: ${CLOUD_PAIR_PEPPER:?set a long random pairing pepper}
+      MC_HOST: ${MC_HOST:-minecraft}
+      MC_PORT: ${MC_PORT:-25565}
+    depends_on:
+      - cloud-api
+
+  minecraft:
+    profiles: ["minecraft"]
+    image: itzg/minecraft-server:java21
+    environment:
+      EULA: ${EULA:-}
+      TYPE: PAPER
+      VERSION: "1.21.4"
+      MEMORY: 2G
+      ENABLE_RCON: "false"
+      ENABLE_QUERY: "false"
+      ONLINE_MODE: "false"
+      PLUGINS: |
+        https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+        https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+    ports:
+      - "19132:19132/udp"
+    volumes:
+      - mc-data:/data
+
+volumes:
+  cloud-data:
+  mc-data:
