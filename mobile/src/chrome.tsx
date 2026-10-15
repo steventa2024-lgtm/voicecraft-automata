@@ -26,6 +26,7 @@ const NAV: Array<{ id: MainTab; label: string; icon: string }> = [
   { id: "pc", label: "My PC", icon: "monitor" },
 ];
 const ICONS: Record<string, string> = {
+  layers: "m12 2 10 5-10 5L2 7Zm-10 10 10 5 10-5M2 17l10 5 10-5",
   house: "M3 10 12 3 21 10M5 9v12h5v-7h4v7h5V9",
   cube: "m12 2 9 5v10l-9 5-9-5V7Zm0 10 9-5M12 12 3 7m9 5v10",
   terminal: "M4 4h16v16H4zM7 8l4 4-4 4m7 0h3",

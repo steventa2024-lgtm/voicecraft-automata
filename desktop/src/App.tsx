@@ -35,9 +35,9 @@ function localPreview(text: string): PreviewResult {
     const plan = buildPlan(planning);
     return {
       instruction,
-      blocks: plan.blocks.slice(0, 15_000),
+      blocks: plan.blocks,
       count: plan.count,
-      limited: plan.blocks.length > 15_000,
+      limited: false,
       description: describeInstruction(instruction),
       materials: plan.materials,
       bounds: plan.bounds,

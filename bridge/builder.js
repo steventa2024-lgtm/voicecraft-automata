@@ -1,3 +1,4 @@
+import { worldPlanBounds } from "../packages/protocol/src/coordinates.js";
 /**
  * Build execution against a live Mineflayer bot.
  * Planning itself lives in @zeropulse/protocol so previews cannot drift from execution.
@@ -18,17 +19,29 @@ function playerPosition(bot) {
 }
 
 export function planInstruction(bot, instruction) {
-  const planning = instruction.action === "clear" ? instruction : { ...instruction, action: "build", valid: true };
+  const planning =
+    instruction.action === "clear" ? instruction : { ...instruction, action: "build", valid: true };
   const plan = buildPlan(planning);
-  const originInfo = placementOrigin({ player: playerPosition(bot), yaw: bot.entity.yaw, instruction: planning });
+  const originInfo = placementOrigin({
+    player: playerPosition(bot),
+    yaw: bot.entity.yaw,
+    instruction: planning,
+  });
   assertPlanFitsWorld(originInfo.y, plan);
   const worldBlocks = plan.blocks.map((block) =>
-    worldPosition(originInfo, block, instruction.rotation || 0, instruction.dimensions.width, instruction.dimensions.depth),
+    worldPosition(
+      originInfo,
+      block,
+      instruction.rotation || 0,
+      instruction.dimensions.width,
+      instruction.dimensions.depth,
+    ),
   );
+  const worldBox = worldPlanBounds(originInfo, plan, instruction);
   const site = surveyTerrain({
-    origin: { ...originInfo, y: originInfo.y + plan.bounds.min.y },
-    width: originInfo.footprint.width,
-    depth: originInfo.footprint.depth,
+    origin: worldBox.min,
+    width: worldBox.width,
+    depth: worldBox.depth,
     height: plan.bounds.height,
     sampler: (x, y, z) => bot.blockAt(new Vec3(x, y, z))?.name ?? null,
   });
@@ -46,7 +59,13 @@ export async function runBuild(bot, instruction, job, onProgress, mode, hooks = 
   hooks.onSite?.(prepared.site);
   const snapshot = await hooks.capture?.(prepared.worldBlocks);
   const result = await placeBlocks(bot, prepared.worldBlocks, null, job, onProgress, mode);
-  return { ...result, origin: prepared.origin, total: prepared.plan.count, site: prepared.site, snapshot };
+  return {
+    ...result,
+    origin: prepared.origin,
+    total: prepared.plan.count,
+    site: prepared.site,
+    snapshot,
+  };
 }
 
 export async function clearArea(bot, instruction, job, onProgress, mode, hooks = {}) {

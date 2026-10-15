@@ -19,6 +19,7 @@ const blueprintSchema = z
     }),
     favorite: z.boolean().default(false),
     notes: z.string().max(500).default(""),
+    generatorVersion: z.number().int().min(1).max(2).optional(),
     templateId: z.string().regex(/^[a-z0-9-]{3,80}$/).optional(),
     templateOptions: z
       .object({

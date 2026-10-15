@@ -1,3 +1,4 @@
+import { blockKey } from "./block-state.js";
 /**
  * Placement loop used by tests and by the Mineflayer adapter.
  * placeOne returns { ok, skipped, retried }.
@@ -69,7 +70,7 @@ export const FILL_VOLUME_LIMIT = 32_768;
 export function toFillRuns(blocks) {
   const rows = new Map();
   for (const block of blocks) {
-    const key = `${block.y}|${block.z}|${block.block}`;
+    const key = `${block.y}|${block.z}|${blockKey(block)}`;
     const row = rows.get(key);
     if (row) row.push(block);
     else rows.set(key, [block]);
@@ -93,6 +94,7 @@ export function toFillRuns(blocks) {
         from: { x: start.x, y: start.y, z: start.z },
         to: { x: previous.x, y: previous.y, z: previous.z },
         block: start.block,
+        ...(start.states ? { states: start.states } : {}),
         count,
       });
       if (!current) break;

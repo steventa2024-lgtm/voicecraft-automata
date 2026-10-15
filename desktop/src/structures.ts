@@ -22,7 +22,7 @@ export type CatalogTemplate = {
 };
 
 export type GeneratedPlan = {
-  blocks: Array<{ x: number; y: number; z: number; block: string }>;
+  blocks: Array<{ x: number; y: number; z: number; block: string; states?: Record<string,string> }>;
   count: number;
   bounds: { width: number; height: number; depth: number };
   fingerprint: string;

@@ -1,10 +1,17 @@
 import React, { useId, useMemo } from "react";
-import { Image, View } from "react-native";
+import { Image, View, Platform } from "react-native";
 import Svg, { Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import { generateTemplate } from "../../packages/protocol/src/templates.js";
 import { voxelScene, materialColor } from "./lib/voxel-scene.js";
+import { sceneMarkup } from "../../packages/protocol/src/voxel-scene.js";
 import { thumbnails } from "./thumbnails";
-export type Block = { x: number; y: number; z: number; block: string };
+export type Block = {
+  x: number;
+  y: number;
+  z: number;
+  block: string;
+  states?: Record<string, string>;
+};
 const cache = new Map<string, Block[]>();
 export function defaultBlocks(id: string) {
   if (!cache.has(id)) cache.set(id, generateTemplate(id).blocks);
@@ -36,6 +43,7 @@ export const StructureArt = React.memo(function StructureArt({
   camera = 2,
   zoom = 1,
   grid = true,
+  cutaway = false,
 }: {
   blocks: Block[];
   width: number;
@@ -44,12 +52,30 @@ export const StructureArt = React.memo(function StructureArt({
   camera?: number;
   zoom?: number;
   grid?: boolean;
+  cutaway?: boolean;
 }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
-  const scene = useMemo(
-    () => voxelScene(blocks, width, height, camera, zoom),
-    [blocks, width, height, camera, zoom],
-  );
+  const scene = useMemo(() => {
+    const ys = blocks.map((b) => b.y),
+      min = Math.min(...ys),
+      max = Math.max(...ys);
+    return voxelScene(
+      cutaway ? blocks.filter((b) => b.y < min + (max - min + 1) * 0.45) : blocks,
+      width,
+      height,
+      camera,
+      zoom,
+    );
+  }, [blocks, width, height, camera, zoom, cutaway]);
+  const svg = useMemo(() => sceneMarkup(scene, width, height, grid), [scene, width, height, grid]);
+  if (Platform.OS === "web")
+    return (
+      <Image
+        accessibilityLabel={"Plan preview: " + scene.visibleBlocks + " solid blocks"}
+        source={{ uri: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg) }}
+        style={{ width, height, borderRadius: rounded }}
+      />
+    );
   return (
     <View
       accessibilityLabel={"Plan preview: " + scene.visibleBlocks + " solid blocks"}

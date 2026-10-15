@@ -1,3 +1,4 @@
+import { matchesBlock } from "./block-state.js";
 import { isProtectedBlock } from "./limits.js";
 
 const RESTORABLE = new Set(["air", "cave_air", "void_air"]);
@@ -19,15 +20,34 @@ export function planUndo(changes, currentAt) {
       excluded.push(change);
       continue;
     }
-    const current = String(currentAt(change) || "air").replace(/^minecraft:/, "");
+    const sample = currentAt(change);
+    const current = String(typeof sample === "string" ? sample : sample?.name || "air").replace(
+      /^minecraft:/,
+      "",
+    );
     const after = String(change.after).replace(/^minecraft:/, "");
     const before = String(change.before).replace(/^minecraft:/, "");
-    if (current !== after) {
+    if (
+      current !== after ||
+      (Object.keys(change.afterStates || {}).length &&
+        !matchesBlock(sample, { block: after, states: change.afterStates }))
+    ) {
       conflicts.push({ ...change, current });
       continue;
     }
-    if (current === before) continue;
-    operations.push({ x: change.x, y: change.y, z: change.z, block: before || "air" });
+    if (
+      current === before &&
+      (!Object.keys(change.beforeStates || {}).length ||
+        matchesBlock(sample, { block: before, states: change.beforeStates }))
+    )
+      continue;
+    operations.push({
+      x: change.x,
+      y: change.y,
+      z: change.z,
+      block: before || "air",
+      ...(change.beforeStates ? { states: change.beforeStates } : {}),
+    });
   }
   return {
     operations,
@@ -48,6 +68,8 @@ export function planRedo(changes, currentAt) {
     ...change,
     before: change.after,
     after: change.before,
+    beforeStates: change.afterStates,
+    afterStates: change.beforeStates,
   }));
   const result = planUndo(flipped, currentAt);
   return { ...result, operations: result.operations };

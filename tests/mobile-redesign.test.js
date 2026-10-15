@@ -24,10 +24,10 @@ const storage = () => {
 test("editor exposes only dimensions and materials that its template actually supports", () => {
   const get = (id) => templateControls(listTemplates().find((t) => t.id === id));
   assert.deepEqual(get("forest-treehouse"), {
-    width: false,
-    depth: false,
+    width: true,
+    depth: true,
     floors: false,
-    material: false,
+    material: true,
   });
   assert.deepEqual(get("lakeside-cottage"), {
     width: true,
@@ -35,7 +35,7 @@ test("editor exposes only dimensions and materials that its template actually su
     floors: false,
     material: true,
   });
-  assert.equal(get("stone-keep").material, false);
+  assert.equal(get("stone-keep").material, true);
 });
 
 test("placement raises canonical cells and changes the preview and approval identity", () => {

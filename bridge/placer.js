@@ -1,3 +1,8 @@
+import {
+  commandBlock,
+  matchesBlock,
+  canonicalStates,
+} from "../packages/protocol/src/block-state.js";
 /**
  * Block placement engine.
  *
@@ -36,8 +41,7 @@ export async function detectMode(bot, timeout = 1200) {
     if (/permission|unknown or incomplete command|Unknown command/i.test(text)) denied = true;
   };
   bot.on("message", listener);
-  const position = bot.entity.position.floored();
-  bot.chat(`/setblock ${position.x} ${Math.max(-64, position.y - 40)} ${position.z} minecraft:air`);
+  bot.chat("/seed"); // Non-mutating operator permission probe.
   await sleep(timeout);
   bot.removeListener("message", listener);
   return denied ? "creative" : "command";
@@ -53,55 +57,105 @@ function knownBlock(bot, name) {
 }
 
 async function placeWithCommands(bot, blocks, job, onProgress) {
-  const world = [];
-  let skipped = 0;
-  for (const block of blocks) {
-    if (!knownBlock(bot, block.block)) {
-      skipped += 1;
-      continue;
-    }
-    world.push(block);
-  }
-  const runs = toFillRuns(world);
-  let permissionFailure = false;
+  const runs = toFillRuns(blocks),
+    sent = [];
+  let permissionFailure = false,
+    stoppedReason = null;
+  const started = Date.now();
   const listener = (json) => {
-    const text = json?.toString?.() ?? "";
-    if (/permission|unknown or incomplete command|Cannot place|out of the world/i.test(text)) permissionFailure = true;
+    if (
+      /permission|unknown or incomplete command|Cannot place|out of the world/i.test(
+        json?.toString?.() || "",
+      )
+    )
+      permissionFailure = true;
   };
   bot.on("message", listener);
-  const result = await executeOperations({
-    operations: runs,
-    job,
-    onProgress,
-    placeOne: async (run) => {
-      if (permissionFailure) return { ok: false };
-      const blockId = assertBlockId(run.block);
-      if (run.count === 1) {
-        bot.chat(`/setblock ${run.from.x} ${run.from.y} ${run.from.z} ${blockId} replace`);
-      } else {
-        bot.chat(
-          `/fill ${run.from.x} ${run.from.y} ${run.from.z} ${run.to.x} ${run.to.y} ${run.to.z} ${blockId} replace`,
-        );
-      }
-      await sleep(40);
-      return { ok: !permissionFailure };
-    },
-  });
-  bot.removeListener("message", listener);
-  const verified = verifySample(bot, world);
-  return {
+  try {
+    await executeOperations({
+      operations: runs,
+      job,
+      placeOne: async (run) => {
+        if (permissionFailure) {
+          throw new Error("The server refused command placement.");
+        }
+        const cells = Array.from({ length: run.count }, (_, i) => ({
+          x: run.from.x + i,
+          y: run.from.y,
+          z: run.from.z,
+          block: run.block,
+          ...(run.states ? { states: run.states } : {}),
+        }));
+        // Recheck immediately before each command, including changes made during a long build.
+        if (
+          cells.some((b) => {
+            const current = bot.blockAt(new Vec3(b.x, b.y, b.z));
+            return !current || isProtectedBlock(current.name);
+          })
+        )
+          throw new Error(
+            "A target became protected or unloaded. Placement stopped before overwriting it.",
+          );
+        const id = commandBlock(run);
+        if (run.count === 1)
+          bot.chat(`/setblock ${run.from.x} ${run.from.y} ${run.from.z} ${id} replace`);
+        else
+          bot.chat(
+            `/fill ${run.from.x} ${run.from.y} ${run.from.z} ${run.to.x} ${run.to.y} ${run.to.z} ${id} replace`,
+          );
+        sent.push(...cells);
+        await sleep(40);
+        return { ok: !permissionFailure };
+      },
+      onProgress: () => {
+        const check = verifySample(bot, sent);
+        onProgress?.({
+          requested: blocks.length,
+          placed: check.ok,
+          failed: 0,
+          skipped: 0,
+          remaining: blocks.length - check.ok,
+          progress: Math.floor((check.ok / blocks.length) * 100),
+          elapsedMs: Date.now() - started,
+        });
+      },
+    });
+    await sleep(200);
+  } catch (error) {
+    stoppedReason = error.message || "Placement stopped.";
+  } finally {
+    bot.removeListener("message", listener);
+  }
+  const verified = verifySample(bot, sent),
+    remaining = blocks.length - sent.length;
+  const status = job.cancelled
+    ? "cancelled"
+    : permissionFailure || stoppedReason || verified.bad
+      ? verified.ok > 0
+        ? "completed_with_errors"
+        : "failed"
+      : "completed";
+  const result = {
     mode: "command",
-    ...result,
-    skipped: result.skipped + skipped,
-    failed: result.failed + verified.bad + (permissionFailure ? 1 : 0),
+    error: stoppedReason,
+    requested: blocks.length,
+    placed: verified.ok,
+    failed: verified.bad + (stoppedReason ? remaining : 0),
+    skipped: 0,
+    retried: 0,
+    remaining: stoppedReason ? 0 : remaining,
+    elapsedMs: Date.now() - started,
+    progress: Math.floor((verified.ok / blocks.length) * 100),
     verified,
-    status: permissionFailure || verified.bad > 0 ? "completed_with_errors" : result.status,
+    status,
   };
+  onProgress?.(result);
+  return result;
 }
 
 function verifySample(bot, blocks) {
   if (!blocks.length || typeof bot.blockAt !== "function") return { ok: 0, bad: 0, sampled: 0 };
-  const sampleCount = Math.min(12, blocks.length);
+  const sampleCount = blocks.length;
   const step = Math.max(1, Math.floor(blocks.length / sampleCount));
   let ok = 0;
   let bad = 0;
@@ -112,7 +166,7 @@ function verifySample(bot, blocks) {
       bad += 1;
       continue;
     }
-    if (current.name === block.block) ok += 1;
+    if (matchesBlock(current, block)) ok += 1;
     else bad += 1;
   }
   return { ok, bad, sampled: ok + bad };
@@ -141,7 +195,9 @@ function referenceFor(bot, position) {
 
 async function placeWithCreative(bot, blocks, job, onProgress) {
   if (bot.game?.gameMode && bot.game.gameMode !== "creative") {
-    const error = new Error("Creative hand placement requires the bot to be in Creative mode. Survival building is not available.");
+    const error = new Error(
+      "Creative hand placement requires the bot to be in Creative mode. Survival building is not available.",
+    );
     error.code = "survival_unavailable";
     throw error;
   }
@@ -196,19 +252,43 @@ async function placeWithCreative(bot, blocks, job, onProgress) {
 export async function placeBlocks(bot, blocks, origin, job, onProgress, mode) {
   const world = origin
     ? blocks.map((block) => ({
+        ...block,
         x: origin.x + block.x,
         y: origin.y + block.y,
         z: origin.z + block.z,
         block: block.block,
       }))
     : blocks;
-  const guarded = partitionProtectedTargets(world, (block) => bot.blockAt?.(new Vec3(block.x, block.y, block.z))?.name ?? null);
+  // Validate every block before sending any mutation to the server.
+  for (const block of world) {
+    canonicalStates(block.block, block.states);
+    if (!knownBlock(bot, block.block))
+      throw new Error(
+        "The connected Minecraft version does not support " +
+          block.block +
+          ". This plan targets Java 1.21.1.",
+      );
+  }
+  const guarded = partitionProtectedTargets(
+    world,
+    (block) => bot.blockAt?.(new Vec3(block.x, block.y, block.z))?.name ?? null,
+  );
   const chosen = mode ?? (await detectMode(bot));
-  const placed = chosen === "creative"
-    ? await placeWithCreative(bot, guarded.place, job, onProgress)
-    : chosen === "command"
-      ? await placeWithCommands(bot, guarded.place, job, onProgress)
-      : null;
+  if (chosen === "creative" && world.some((b) => Object.keys(b.states || {}).length)) {
+    throw new Error(
+      "This architectural plan requires command placement to preserve exact block states. Enable operator command placement on your Java server; no blocks were changed.",
+    );
+  }
+  const placed =
+    chosen === "creative"
+      ? await placeWithCreative(bot, guarded.place, job, onProgress)
+      : chosen === "command"
+        ? await placeWithCommands(bot, guarded.place, job, onProgress)
+        : null;
   if (!placed) throw new Error("No supported placement mode is available.");
-  return { ...placed, skipped: (placed.skipped || 0) + guarded.skipped.length, protectedSkipped: guarded.skipped.length };
+  return {
+    ...placed,
+    skipped: (placed.skipped || 0) + guarded.skipped.length,
+    protectedSkipped: guarded.skipped.length,
+  };
 }

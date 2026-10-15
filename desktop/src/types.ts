@@ -1,4 +1,5 @@
 export interface PreviewBlock {
+  states?: Record<string,string>;
   x: number;
   y: number;
   z: number;

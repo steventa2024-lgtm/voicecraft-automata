@@ -1,8 +1,9 @@
+import { blockKey, transformStates } from "./block-state.js";
 /** Deterministic plan identity and local blueprint edits. No Minecraft I/O. */
 
 export function planFingerprint(blocks) {
   const lines = [...blocks]
-    .map((block) => `${block.x | 0},${block.y | 0},${block.z | 0},${block.block}`)
+    .map((block) => `${block.x | 0},${block.y | 0},${block.z | 0},${blockKey(block)}`)
     .sort();
   let hash = 2166136261;
   const text = lines.join("\n");
@@ -28,7 +29,8 @@ export function boundsOf(blocks) {
     maxY = Math.max(maxY, block.y);
     maxZ = Math.max(maxZ, block.z);
   }
-  if (!Number.isFinite(minX)) return { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 }, width: 0, height: 0, depth: 0 };
+  if (!Number.isFinite(minX))
+    return { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 }, width: 0, height: 0, depth: 0 };
   return {
     min: { x: minX, y: minY, z: minZ },
     max: { x: maxX, y: maxY, z: maxZ },
@@ -47,6 +49,8 @@ export function rotateBlocks(blocks, turns) {
       const x = block.x - box.min.x;
       const z = block.z - box.min.z;
       return {
+        ...block,
+        ...(block.states ? { states: transformStates(block.states, (x, z) => [-z, x]) } : {}),
         x: box.min.x + (box.depth - 1 - z),
         y: block.y,
         z: box.min.z + x,
@@ -60,8 +64,18 @@ export function rotateBlocks(blocks, turns) {
 export function mirrorBlocks(blocks, axis) {
   const bounds = boundsOf(blocks);
   return blocks.map((block) => {
-    if (axis === "x") return { ...block, x: bounds.max.x - (block.x - bounds.min.x) };
-    if (axis === "z") return { ...block, z: bounds.max.z - (block.z - bounds.min.z) };
+    if (axis === "x")
+      return {
+        ...block,
+        ...(block.states ? { states: transformStates(block.states, (x, z) => [-x, z], true) } : {}),
+        x: bounds.max.x - (block.x - bounds.min.x),
+      };
+    if (axis === "z")
+      return {
+        ...block,
+        ...(block.states ? { states: transformStates(block.states, (x, z) => [x, -z], true) } : {}),
+        z: bounds.max.z - (block.z - bounds.min.z),
+      };
     const error = new Error("Mirror supports the x or z axis.");
     error.code = "unsupported_transform";
     throw error;
@@ -88,7 +102,9 @@ export function approvalSnapshot(plan) {
 export function assertSamePlan(snapshot, blocks) {
   const fingerprint = planFingerprint(blocks);
   if (!snapshot || snapshot.fingerprint !== fingerprint || snapshot.count !== blocks.length) {
-    const error = new Error("The approved plan no longer matches the preview. Generate the preview again.");
+    const error = new Error(
+      "The approved plan no longer matches the preview. Generate the preview again.",
+    );
     error.code = "plan_mismatch";
     throw error;
   }

@@ -315,9 +315,9 @@ function previewFrom(input) {
     const plan = buildPlan(planning);
     return {
       instruction,
-      blocks: plan.blocks.slice(0, 15_000),
+      blocks: plan.blocks,
       count: plan.count,
-      limited: plan.blocks.length > 15_000,
+      limited: false,
       bounds: plan.bounds,
       materials: plan.materials,
       fingerprint: plan.fingerprint,

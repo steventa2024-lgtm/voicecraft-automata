@@ -115,6 +115,11 @@ export function LibraryScreen(p: Props) {
                     <HeartIcon on={item.favorite} />
                   </Pressable>
                 </View>
+                {item.needsReview ? (
+                  <Note>
+                    Architecture updated. Inspect the new plan and save it again before building.
+                  </Note>
+                ) : null}
                 <Button
                   title="Open in Blueprint Studio"
                   icon="cube"

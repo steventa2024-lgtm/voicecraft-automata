@@ -66,6 +66,7 @@ export function BlueprintScreen(p: Props) {
   const [camera, setCamera] = useState(2),
     [zoom, setZoom] = useState(1),
     [grid, setGrid] = useState(true),
+    [cutaway, setCutaway] = useState(false),
     [expanded, setExpanded] = useState(false);
   const [ready, setReady] = useState(false),
     [busy, setBusy] = useState<"prepare" | "approve" | null>(null),
@@ -267,10 +268,19 @@ export function BlueprintScreen(p: Props) {
               camera={camera}
               zoom={zoom}
               grid={grid}
+              cutaway={cutaway}
             />
             {controls}
+            <View style={{ position: "absolute", left: 7, top: 8 }}>
+              <IconButton
+                icon="layers"
+                label={cutaway ? "Show full structure" : "Inspect interior"}
+                active={cutaway}
+                onPress={() => setCutaway(!cutaway)}
+              />
+            </View>
             <View style={s.previewCaption}>
-              <Text style={s.previewLabel}>EXECUTABLE PLAN</Text>
+              <Text style={s.previewLabel}>{cutaway ? "INTERIOR CUTAWAY" : "EXECUTABLE PLAN"}</Text>
               <Text style={s.previewLabel}>{solidCount.toLocaleString()} BLOCKS</Text>
             </View>
           </View>
@@ -543,8 +553,15 @@ export function BlueprintScreen(p: Props) {
             camera={camera}
             zoom={zoom}
             grid={grid}
+            cutaway={cutaway}
           />
           <View style={[s.row, { padding: 18, justifyContent: "center" }]}>
+            <IconButton
+              icon="layers"
+              label="Toggle expanded interior"
+              active={cutaway}
+              onPress={() => setCutaway(!cutaway)}
+            />
             <IconButton
               icon="rotate"
               label="Orbit expanded camera"

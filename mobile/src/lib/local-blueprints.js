@@ -33,6 +33,8 @@ export function readLocalBlueprints(storage = globalThis.localStorage) {
           name: String(item.name || templateById(item.templateId).name).slice(0, 80),
           options: plan.settings,
           fingerprint: plan.fingerprint,
+          generatorVersion: item.generatorVersion || 1,
+          needsReview: (item.generatorVersion || 1) !== plan.generatorVersion,
           savedAt: item.savedAt || "",
           favorite: Boolean(item.favorite),
         },
@@ -60,6 +62,7 @@ export function saveLocalBlueprint(input, storage = globalThis.localStorage) {
       .slice(0, 80),
     options: plan.settings,
     fingerprint: plan.fingerprint,
+    generatorVersion: plan.generatorVersion,
     savedAt: new Date().toISOString(),
     favorite: previous?.favorite || false,
   };

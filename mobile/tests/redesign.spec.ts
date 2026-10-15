@@ -27,7 +27,7 @@ test("editor transforms, undo/redo, camera tools and unsupported controls reflec
     () => JSON.parse(localStorage.getItem("voicecraft.local.blueprints")!)[0],
   );
   expect(saved.options).toMatchObject({
-    width: 10,
+    width: 18,
     rotation: 1,
     mirror: "x",
     material: "stone_bricks",
@@ -36,10 +36,10 @@ test("editor transforms, undo/redo, camera tools and unsupported controls reflec
   await tab(page, "Catalog");
   await page.getByRole("textbox", { name: "Search structures" }).fill("Forest Treehouse");
   await page.getByRole("button", { name: "Open Forest Treehouse", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Medieval", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Medieval", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "On Water", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Increase Width (X)", exact: true })).toHaveCount(
-    0,
+    1,
   );
 });
 
@@ -91,6 +91,9 @@ test("placement changes the prepared plan, invalidates approval, and survives Li
   const approve = page.getByRole("button", { name: "Approve Build", exact: true });
   await page.getByRole("button", { name: "Prepare Preview", exact: true }).click();
   await expect(approve).toBeEnabled();
+  await page.getByRole("button", { name: "Inspect interior", exact: true }).click();
+  await expect(approve).toBeEnabled();
+  await page.getByRole("button", { name: "Show full structure", exact: true }).click();
   await page.getByRole("button", { name: "Orbit camera", exact: true }).click();
   await expect(approve).toBeEnabled();
   await page.getByRole("button", { name: "Floating", exact: true }).click();

@@ -1,0 +1,149 @@
+[
+  {
+    "id": "lakeside-cottage",
+    "count": 297,
+    "solid": 295,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": -1,
+        "z": 0
+      },
+      "max": {
+        "x": 8,
+        "y": 4,
+        "z": 13
+      },
+      "width": 9,
+      "height": 6,
+      "depth": 14
+    },
+    "fingerprint": "decb4ccf"
+  },
+  {
+    "id": "starter-cottage",
+    "count": 279,
+    "solid": 277,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "max": {
+        "x": 8,
+        "y": 8,
+        "z": 7
+      },
+      "width": 9,
+      "height": 9,
+      "depth": 8
+    },
+    "fingerprint": "8eea2ee0"
+  },
+  {
+    "id": "oak-cabin",
+    "count": 264,
+    "solid": 262,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": 0,
+        "z": -2
+      },
+      "max": {
+        "x": 9,
+        "y": 5,
+        "z": 7
+      },
+      "width": 11,
+      "height": 6,
+      "depth": 10
+    },
+    "fingerprint": "3a4b41c7"
+  },
+  {
+    "id": "forest-treehouse",
+    "count": 149,
+    "solid": 147,
+    "bounds": {
+      "min": {
+        "x": 2,
+        "y": 0,
+        "z": 1
+      },
+      "max": {
+        "x": 8,
+        "y": 12,
+        "z": 8
+      },
+      "width": 7,
+      "height": 13,
+      "depth": 8
+    },
+    "fingerprint": "ab656936"
+  },
+  {
+    "id": "stone-keep",
+    "count": 528,
+    "solid": 526,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "max": {
+        "x": 10,
+        "y": 9,
+        "z": 10
+      },
+      "width": 11,
+      "height": 10,
+      "depth": 11
+    },
+    "fingerprint": "2025dcdd"
+  },
+  {
+    "id": "cliffside-house",
+    "count": 375,
+    "solid": 373,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "max": {
+        "x": 10,
+        "y": 7,
+        "z": 9
+      },
+      "width": 11,
+      "height": 8,
+      "depth": 10
+    },
+    "fingerprint": "f904feef"
+  },
+  {
+    "id": "glass-villa",
+    "count": 488,
+    "solid": 486,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "max": {
+        "x": 15,
+        "y": 5,
+        "z": 8
+      },
+      "width": 16,
+      "height": 6,
+      "depth": 9
+    },
+    "fingerprint": "6bdfaac3"
+  }
+]

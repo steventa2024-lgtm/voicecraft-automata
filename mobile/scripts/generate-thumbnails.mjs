@@ -7,11 +7,22 @@ import { sceneSvg } from "../src/lib/voxel-scene.js";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 await fs.mkdir(path.join(root, "assets/catalog"), { recursive: true });
 const lines = [];
+async function writeAsset(file, data) {
+  // Windows file watchers can briefly hold an existing catalog image open.
+  for (let attempt=0; ; attempt++) {
+    try { await fs.writeFile(file,data); return; }
+    catch(error) {
+      if(attempt>=5 || !["EBUSY","EPERM","EACCES","UNKNOWN"].includes(error.code)) throw error;
+      await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+    }
+  }
+}
 for (const template of listTemplates()) {
   const plan = generateTemplate(template.id);
-  await sharp(Buffer.from(sceneSvg(plan.blocks, 560, 400, 2)))
+  const png = await sharp(Buffer.from(sceneSvg(plan.blocks, 560, 400, 2)))
     .png()
-    .toFile(path.join(root, "assets/catalog", template.id + ".png"));
+    .toBuffer();
+  await writeAsset(path.join(root, "assets/catalog", template.id + ".png"), png);
   lines.push('  "' + template.id + '": require("../assets/catalog/' + template.id + '.png"),');
 }
 await fs.writeFile(

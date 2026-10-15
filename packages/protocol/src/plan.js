@@ -1,3 +1,4 @@
+import { canonicalStates } from "./block-state.js";
 import { planFingerprint } from "./blueprint-edit.js";
 import { generateStructure } from "./generators.js";
 import { generateTemplate } from "./templates.js";
@@ -26,13 +27,20 @@ export function partitionProtectedTargets(blocks, sample) {
 function dedupe(blocks) {
   const map = new Map();
   for (const block of blocks) {
-    if (!block || !Number.isFinite(block.x) || !Number.isFinite(block.y) || !Number.isFinite(block.z)) continue;
+    if (
+      !block ||
+      !Number.isFinite(block.x) ||
+      !Number.isFinite(block.y) ||
+      !Number.isFinite(block.z)
+    )
+      continue;
     if (typeof block.block !== "string" || !/^[a-z0-9_]+$/.test(block.block)) continue;
     map.set(`${block.x}|${block.y}|${block.z}`, {
       x: block.x | 0,
       y: block.y | 0,
       z: block.z | 0,
       block: block.block,
+      ...(block.states ? { states: canonicalStates(block.block, block.states) } : {}),
     });
   }
   return [...map.values()];
@@ -67,7 +75,10 @@ export function buildPlan(instruction) {
   const blocks = dedupe(
     instruction.templateId
       ? (() => {
-          const generated = generateTemplate(instruction.templateId, instruction.templateOptions || {});
+          const generated = generateTemplate(
+            instruction.templateId,
+            instruction.templateOptions || {},
+          );
           warnings = generated.warnings;
           return generated.blocks;
         })()
@@ -77,12 +88,16 @@ export function buildPlan(instruction) {
   );
   const protectedWrite = blocks.find((block) => isProtectedBlock(block.block));
   if (protectedWrite) {
-    const error = new Error(`The plan places ${protectedWrite.block}, which is protected. Remove it and generate the preview again.`);
+    const error = new Error(
+      `The plan places ${protectedWrite.block}, which is protected. Remove it and generate the preview again.`,
+    );
     error.code = "protected_write";
     throw error;
   }
   if (blocks.length > MAX_OPERATIONS) {
-    const error = new Error(`Plan has ${blocks.length} operations, above the cap of ${MAX_OPERATIONS}.`);
+    const error = new Error(
+      `Plan has ${blocks.length} operations, above the cap of ${MAX_OPERATIONS}.`,
+    );
     error.code = "operation_cap";
     throw error;
   }
