@@ -4,7 +4,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -42,21 +41,12 @@ import {
   type ConsolePlatform,
 } from "./src/lib/cloud";
 import { theme as c } from "./src/theme";
-import { Button, Card, Field, Footprint, Note, Status } from "./src/ui";
-import { CatalogScreen } from "./src/catalog";
+import { Button, Card, Field, Note } from "./src/ui";
+import { BlueprintScreen, CatalogScreen } from "./src/catalog";
 import { PcScreen } from "./src/pc";
-
-type Tab = "home" | "build" | "console" | "library" | "catalog" | "pc" | "settings";
-
-const tabs: { id: Tab; label: string }[] = [
-  { id: "home", label: "Home" },
-  { id: "build", label: "Build" },
-  { id: "console", label: "Console" },
-  { id: "library", label: "Library" },
-  { id: "catalog", label: "Catalog" },
-  { id: "pc", label: "My PC" },
-  { id: "settings", label: "Settings" },
-];
+import { HomeScreen } from "./src/home";
+import { ConsoleScreen } from "./src/console";
+import { BottomNav, GlowCard, LogoMark, ModeMenu, ScreenHero, type MainTab } from "./src/chrome";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong.";
@@ -74,7 +64,10 @@ export default function App() {
 function Root() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
-  const [tab, setTab] = useState<Tab>("home");
+  const [tab, setTab] = useState<MainTab>("home");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [buildMode, setBuildMode] = useState<"blueprint" | "voice">("blueprint");
+  const [templateId, setTemplateId] = useState("lakeside-cottage");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [creating, setCreating] = useState(false);
@@ -82,7 +75,6 @@ function Root() {
   const [cloud, setCloud] = useState<CloudSession | null>(null);
   const [health, setHealth] = useState<CloudHealth | null>(null);
   const [platform, setPlatform] = useState<ConsolePlatform>("ps5");
-  const [step, setStep] = useState(0);
   const [pairCode, setPairCode] = useState("");
   const [instruction, setInstruction] = useState("");
   const [preview, setPreview] = useState<CloudPreview | null>(null);
@@ -138,6 +130,11 @@ function Root() {
   }, [session, tab, connection.mode, connection.apiUrl]);
 
   useEffect(() => {
+    if (!session || !cloudConfigured()) return;
+    fetchHealth().then(setHealth).catch(() => setHealth(null));
+  }, [session, connection.mode, connection.apiUrl]);
+
+  useEffect(() => {
     if (!job || !["queued", "building", "cancelling"].includes(job.status)) return;
     const timer = setInterval(() => {
       fetchJob(job.jobId).then(setJob).catch(() => undefined);
@@ -169,7 +166,6 @@ function Root() {
     setBusy(true);
     try {
       setHealth(await fetchHealth());
-      setStep(2);
     } catch (error) {
       setHealth(null);
       Alert.alert("Cloud unavailable", errorMessage(error));
@@ -183,8 +179,7 @@ function Root() {
     try {
       await claimPairing(pairCode.trim().toUpperCase(), platform);
       await refreshCloud();
-      setStep(4);
-      setTab("build");
+      setTab("home");
     } catch (error) {
       Alert.alert("Pairing failed", errorMessage(error));
     } finally {
@@ -255,6 +250,18 @@ function Root() {
     setBlueprints(body.blueprints);
   }
 
+  function openTab(next: MainTab) {
+    setSettingsOpen(false);
+    setTab(next);
+    if (next === "library") loadLibrary().catch(() => setBlueprints([]));
+  }
+
+  function openTemplate(id: string) {
+    setTemplateId(id);
+    setBuildMode("blueprint");
+    openTab("build");
+  }
+
   if (loadingAuth) {
     return <View style={styles.center}><ActivityIndicator color={c.blue} /><Text style={styles.sub}>Loading VoiceCraft</Text></View>;
   }
@@ -263,8 +270,12 @@ function Root() {
     return (
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.auth} keyboardShouldPersistTaps="handled">
-          <Text style={styles.brand}>ZERO<Text style={{ color: c.blue }}>PULSE</Text></Text>
+          <View style={styles.brandRow}>
+            <LogoMark />
+            <Text style={styles.brand}>Zero<Text style={{ color: c.blue }}>Pulse</Text></Text>
+          </View>
           <Text style={styles.hero}>VoiceCraft</Text>
+          <Text style={styles.sub}>Turn your ideas into Minecraft builds. Sign in with the same ZeroPulse account as the website.</Text>
           <Card>
             <Text style={styles.cardTitle}>{authConfigured ? (creating ? "Create your account" : "Sign in") : "Setup required"}</Text>
             {authConfigured ? (
@@ -294,190 +305,243 @@ function Root() {
   }
 
   return (
-    <SafeAreaView style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-        {tab === "home" ? (
-          <View style={styles.stack}>
-            <Text style={styles.kicker}>COMMAND CENTER</Text>
-            <Text style={styles.hero}>Speak it. Preview it. Build it.</Text>
-            <Card>
-              <Status label={cloud?.link ? `Linked ${cloud.link.playerName}` : "No Minecraft player linked"} good={Boolean(cloud?.link)} />
-              <Status label={cloudConfigured() ? "Cloud API configured" : "Cloud API not configured"} good={cloudConfigured()} />
-              <Note>{connectionModeLabel(connection.mode)}. The phone sends VoiceCraft API requests only. It cannot send Minecraft console commands.</Note>
-              <Text style={styles.cardTitle}>{cloud?.link?.worldName || "No world"}</Text>
-              <Note>{cloud?.entitlement.message || (cloud ? `Plan ${cloud.entitlement.plan || "unknown"}` : "Sign-in succeeded. Pull to reopen this tab after the API is configured.")}</Note>
-              {cloud?.entitlement.tasksRemaining != null ? <Note>{cloud.entitlement.tasksRemaining} tasks remaining today.</Note> : null}
-            </Card>
-            {job ? <JobCard job={job} onCancel={() => cancelJob(job.jobId).then(setJob).catch((error) => Alert.alert("Could not cancel", errorMessage(error)))} /> : <Note>No build is running.</Note>}
-            <Button title="Open Build Studio" onPress={() => setTab("build")} />
-          </View>
+    <SafeAreaView style={styles.flex} edges={["top"]}>
+      <View style={styles.flex}>
+        {settingsOpen ? (
+          <Settings
+            email={session.user.email || ""}
+            cloud={cloud}
+            connectionLabel={connectionModeLabel(connection.mode)}
+            configured={cloudConfigured()}
+            mode={connection.mode}
+            apiDraft={apiDraft}
+            onMode={(mode) => setConnection({ ...connection, mode })}
+            onDraft={setApiDraft}
+            onSave={() => {
+              try {
+                saveConnection({ mode: connection.mode, apiUrl: apiDraft.trim() });
+                Alert.alert("Connection saved", "The next request uses this API. A build still needs a preview you approve.");
+              } catch (error) {
+                Alert.alert("Address not allowed", errorMessage(error));
+              }
+            }}
+            onSignOut={() => supabase?.auth.signOut()}
+            onClose={() => setSettingsOpen(false)}
+          />
         ) : null}
-
-        {tab === "build" ? (
-          <View style={styles.stack}>
-            <Text style={styles.kicker}>BUILD STUDIO</Text>
-            <Card>
-              <Button
-                title={recorderState.isRecording ? "Stop and transcribe" : "Hold is not required. Tap to record"}
-                onPress={() => void toggleVoice()}
-                disabled={busy && !recorderState.isRecording}
-              />
-              <Note>{recorderState.isRecording ? "Microphone is on." : "The microphone stays off until you tap record."}</Note>
-              <Field value={instruction} onChangeText={setInstruction} multiline placeholder="Build a small stone house" accessibilityLabel="Build request" />
-              <Button title={busy ? "Working" : "Preview"} disabled={busy || !cloud?.link} onPress={() => void plan()} />
-              {!cloud?.link ? <Note>Pair a console player before a preview can be created.</Note> : null}
-            </Card>
-            {preview ? (
-              <Card>
-                <Text style={styles.cardTitle}>{preview.summary}</Text>
-                <Note>{preview.estimatedBlocks} blocks · {preview.width} × {preview.height} × {preview.depth}</Note>
-                <Footprint width={preview.width} depth={preview.depth} />
-                {preview.warnings.map((warning) => <Note key={warning}>{warning}</Note>)}
-                <Button title="Approve build" onPress={() => void approve()} disabled={busy} />
-                <Button title="Save blueprint" secondary onPress={() => {
-                  saveBlueprint(preview.previewId, blueprintName || "Blueprint")
-                    .then(() => Alert.alert("Saved", "The blueprint is in your library. The world was not changed."))
-                    .catch((error) => Alert.alert("Not saved", errorMessage(error)));
-                }} />
-                <Button title="Discard preview" secondary onPress={() => setPreview(null)} />
-              </Card>
-            ) : null}
-            {job ? <JobCard job={job} onCancel={() => cancelJob(job.jobId).then(setJob).catch((error) => Alert.alert("Could not cancel", errorMessage(error)))} /> : null}
-          </View>
+        {!settingsOpen && tab === "home" ? (
+          <HomeScreen
+            cloud={cloud}
+            health={health}
+            configured={cloudConfigured()}
+            job={job}
+            onBell={() => setSettingsOpen(true)}
+            onBuild={() => { setBuildMode("blueprint"); openTab("build"); }}
+            onVoice={() => { setBuildMode("voice"); openTab("build"); }}
+            onText={() => { setBuildMode("voice"); openTab("build"); }}
+            onCatalog={() => openTab("catalog")}
+            onPc={() => openTab("pc")}
+            onOpen={openTemplate}
+          />
         ) : null}
-
-        {tab === "console" ? (
-          <View style={styles.stack}>
-            <Text style={styles.kicker}>CONSOLE</Text>
-            <Text style={styles.section}>Choose a console</Text>
-            <Button title="PlayStation 5" secondary={platform !== "ps5"} onPress={() => { setPlatform("ps5"); setStep(1); }} />
-            <Button title="Xbox Series X/S" secondary={platform !== "xbox"} onPress={() => { setPlatform("xbox"); setStep(1); }} />
-            {step >= 1 ? (
-              <Card>
-                <Text style={styles.cardTitle}>Cloud status</Text>
-                <Button title={busy ? "Checking" : "Check cloud"} disabled={busy} onPress={() => void checkHealth()} />
-                {health ? (
-                  <>
-                    <Status label={`API ${health.api}`} good={health.api === "ok"} />
-                    <Status label={`Minecraft ${health.minecraft}`} good={health.minecraft === "tcp-open"} />
-                    <Note>
-                      {health.bedrock
-                        ? `Bedrock address ${health.bedrock.host}:${health.bedrock.port}. UDP was not probed from this phone.`
-                        : "No public Bedrock address is published yet."}
-                    </Note>
-                  </>
-                ) : <Note>A successful check is the only connection state this screen will show.</Note>}
-              </Card>
-            ) : null}
-            {step >= 2 ? (
-              <Card>
-                <Text style={styles.cardTitle}>Join from {platform === "ps5" ? "PS5" : "Xbox"}</Text>
-                <Note>Use the same Wi-Fi as the phone. Open Minecraft Bedrock, then the Servers or Friends tab, and use BedrockConnect or the featured-server workaround documented for your console. VoiceCraft does not join an existing single-player world or Realm.</Note>
-                <Note>In the cloud world, type vc pair. Enter the 8 character code here. The code alone does not authorize a build.</Note>
-                <Field value={pairCode} onChangeText={setPairCode} autoCapitalize="characters" placeholder="Pairing code" accessibilityLabel="Pairing code" />
-                <Button title="Link this player" disabled={busy} onPress={() => void pair()} />
-              </Card>
-            ) : null}
-            {cloud?.link ? (
-              <Card>
-                <Text style={styles.cardTitle}>Linked</Text>
-                <Note>{cloud.link.playerName} on {cloud.link.platform} · {cloud.link.worldName}</Note>
-                <Note>{cloud.link.bedrock ? "The server reported a Bedrock player id. PlayStation or Xbox is the choice you made here, not a guess from that id." : "The server did not report a Bedrock player id."}</Note>
-                <Button title="Unpair" danger onPress={() => {
-                  revokePairing().then(() => refreshCloud()).catch((error) => Alert.alert("Could not unpair", errorMessage(error)));
-                }} />
-              </Card>
-            ) : null}
-          </View>
+        {!settingsOpen && tab === "build" && buildMode === "blueprint" ? (
+          <BlueprintScreen templateId={templateId} mode={buildMode} onMode={setBuildMode} onBell={() => setSettingsOpen(true)} onBack={() => openTab("catalog")} />
         ) : null}
-
-        {tab === "library" ? (
-          <View style={styles.stack}>
-            <Text style={styles.kicker}>LIBRARY</Text>
-            <Button title="Refresh" secondary onPress={() => loadLibrary().catch((error) => Alert.alert("Library unavailable", errorMessage(error)))} />
-            {blueprints.length === 0 ? <Note>No saved blueprints yet. Save one from a real preview.</Note> : null}
-            {blueprints.map((item) => (
-              <Card key={item.id}>
-                <Text style={styles.cardTitle}>{item.name}</Text>
-                <Note>{item.summary}</Note>
-                <Note>{item.estimatedBlocks} blocks · {item.favorite ? "Favorite" : item.category}</Note>
-                <Button title="Preview again" onPress={() => {
-                  previewBlueprint(item.id).then((next) => {
-                    setPreview(next);
-                    setTab("build");
-                  }).catch((error) => Alert.alert("Preview failed", errorMessage(error)));
-                }} />
-                <Button title={item.favorite ? "Unfavorite" : "Favorite"} secondary onPress={() => {
-                  favoriteBlueprint(item.id, !item.favorite).then(loadLibrary).catch((error) => Alert.alert("Not updated", errorMessage(error)));
-                }} />
-                <Button title="Duplicate" secondary onPress={() => duplicateBlueprint(item.id).then(loadLibrary).catch((error) => Alert.alert("Not duplicated", errorMessage(error)))} />
-                <Button title="Rename" secondary onPress={() => renameBlueprint(item.id, `${item.name} renamed`).then(loadLibrary).catch((error) => Alert.alert("Not renamed", errorMessage(error)))} />
-                <Button title="Delete" danger onPress={() => deleteBlueprint(item.id).then(loadLibrary).catch((error) => Alert.alert("Not deleted", errorMessage(error)))} />
-              </Card>
-            ))}
-          </View>
+        {!settingsOpen && tab === "build" && buildMode === "voice" ? (
+          <VoiceStudio
+            mode={buildMode}
+            onMode={setBuildMode}
+            onBell={() => setSettingsOpen(true)}
+            recording={recorderState.isRecording}
+            busy={busy}
+            instruction={instruction}
+            onInstruction={setInstruction}
+            onVoice={() => void toggleVoice()}
+            onPlan={() => void plan()}
+            linked={Boolean(cloud?.link)}
+            preview={preview}
+            blueprintName={blueprintName}
+            onSave={() => {
+              if (!preview) return;
+              saveBlueprint(preview.previewId, blueprintName || "Blueprint")
+                .then(() => Alert.alert("Saved", "The blueprint is in your library. The world was not changed."))
+                .catch((error) => Alert.alert("Not saved", errorMessage(error)));
+            }}
+            onApprove={() => void approve()}
+            onDiscard={() => setPreview(null)}
+            job={job}
+            onCancel={() => job && cancelJob(job.jobId).then(setJob).catch((error) => Alert.alert("Could not cancel", errorMessage(error)))}
+          />
         ) : null}
-
-        {tab === "catalog" ? <CatalogScreen /> : null}
-
-        {tab === "pc" ? <PcScreen /> : null}
-
-        {tab === "settings" ? (
-          <View style={styles.stack}>
-            <Text style={styles.kicker}>SETTINGS</Text>
-            <Card>
-              <Text style={styles.cardTitle}>{session.user.email}</Text>
-              <Note>App 0.2.0 · remote push notifications are not configured.</Note>
-              <Note>Microphone access is requested only when you record. Background recording is off.</Note>
-              <Note>{cloud?.entitlement.plan ? `Plan ${cloud.entitlement.plan}. ${cloud.entitlement.message || ""}` : "Subscription status appears after the API accepts this session."}</Note>
-              <Note>{cloudConfigured() ? `API ${connectionModeLabel(connection.mode)}` : "Cloud API URL is not set."}</Note>
-              <Button title="Sign out" onPress={() => supabase?.auth.signOut()} />
-            </Card>
-            <Card>
-              <Text style={styles.cardTitle}>Server connection</Text>
-              <Note>One app, three ways to reach an authorized VoiceCraft API. None of these places blocks on the phone.</Note>
-              <Button title="Local developer" secondary={connection.mode !== "local"} onPress={() => setConnection({ ...connection, mode: "local" })} />
-              <Button title="Community server" secondary={connection.mode !== "community"} onPress={() => setConnection({ ...connection, mode: "community" })} />
-              <Button title="Your server" secondary={connection.mode !== "supplied"} onPress={() => setConnection({ ...connection, mode: "supplied" })} />
-              <Field value={apiDraft} onChangeText={setApiDraft} autoCapitalize="none" placeholder="https://api.example" accessibilityLabel="VoiceCraft API address" />
-              <Button title="Save connection" onPress={() => {
-                try {
-                  saveConnection({ mode: connection.mode, apiUrl: apiDraft.trim() });
-                  Alert.alert("Connection saved", "The next request uses this API. A build still needs a preview you approve.");
-                } catch (error) {
-                  Alert.alert("Address not allowed", errorMessage(error));
-                }
-              }} />
-              <Note>Local developer mode uses this computer on your private network. It is for testing, not a 24/7 service.</Note>
-              <Note>Community server mode uses HTTPS to an operator who installed the VoiceCraft adapter. You can pair and revoke your device. You cannot administer their world from this phone.</Note>
-              <Note>Your server mode is for a Minecraft host you control. Install the adapter from the repository docs. If you do not control the server, use community mode and ask the operator.</Note>
-            </Card>
-          </View>
+        {!settingsOpen && tab === "console" ? (
+          <ConsoleScreen
+            platform={platform}
+            onPlatform={setPlatform}
+            health={health}
+            busy={busy}
+            onCheck={() => void checkHealth()}
+            pairCode={pairCode}
+            onCode={setPairCode}
+            onPair={() => void pair()}
+            cloud={cloud}
+            onUnpair={() => { revokePairing().then(() => refreshCloud()).catch((error) => Alert.alert("Could not unpair", errorMessage(error))); }}
+            onBell={() => setSettingsOpen(true)}
+          />
         ) : null}
-      </ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabs} contentContainerStyle={styles.tabRow}>
-        {tabs.map((item) => (
-          <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: tab === item.id }} onPress={() => {
-            setTab(item.id);
-            if (item.id === "library") loadLibrary().catch(() => setBlueprints([]));
-          }} style={styles.tab}>
-            <Text style={[styles.tabText, tab === item.id && styles.tabOn]}>{item.label}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+        {!settingsOpen && tab === "library" ? (
+          <Library blueprints={blueprints} onRefresh={() => loadLibrary().catch((error) => Alert.alert("Library unavailable", errorMessage(error)))} onPreview={(item) => {
+            previewBlueprint(item.id).then((next) => {
+              setPreview(next);
+              setBuildMode("voice");
+              setTab("build");
+            }).catch((error) => Alert.alert("Preview failed", errorMessage(error)));
+          }} onFavorite={(item) => {
+            favoriteBlueprint(item.id, !item.favorite).then(loadLibrary).catch((error) => Alert.alert("Not updated", errorMessage(error)));
+          }} onDuplicate={(item) => duplicateBlueprint(item.id).then(loadLibrary).catch((error) => Alert.alert("Not duplicated", errorMessage(error)))} onRename={(item) => {
+            renameBlueprint(item.id, `${item.name} renamed`).then(loadLibrary).catch((error) => Alert.alert("Not renamed", errorMessage(error)));
+          }} onDelete={(item) => deleteBlueprint(item.id).then(loadLibrary).catch((error) => Alert.alert("Not deleted", errorMessage(error)))} onBell={() => setSettingsOpen(true)} />
+        ) : null}
+        {!settingsOpen && tab === "catalog" ? <CatalogScreen onOpen={openTemplate} onBell={() => setSettingsOpen(true)} /> : null}
+        {!settingsOpen && tab === "pc" ? <PcScreen onBell={() => setSettingsOpen(true)} /> : null}
+      </View>
+      <BottomNav tab={tab} onChange={openTab} />
     </SafeAreaView>
+  );
+}
+
+function VoiceStudio(props: {
+  mode: "blueprint" | "voice";
+  onMode: (mode: "blueprint" | "voice") => void;
+  onBell: () => void;
+  recording: boolean;
+  busy: boolean;
+  instruction: string;
+  onInstruction: (value: string) => void;
+  onVoice: () => void;
+  onPlan: () => void;
+  linked: boolean;
+  preview: CloudPreview | null;
+  blueprintName: string;
+  onSave: () => void;
+  onApprove: () => void;
+  onDiscard: () => void;
+  job: CloudJob | null;
+  onCancel: () => void;
+}) {
+  return (
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+        <ScreenHero compact subtitle="Describe a build. Nothing is placed until you approve a preview." onBell={props.onBell} right={<ModeMenu mode={props.mode} onChange={props.onMode} />} />
+        <View style={styles.pad}>
+          <GlowCard>
+            <Button title={props.recording ? "Stop and transcribe" : "Voice Build"} onPress={props.onVoice} disabled={props.busy && !props.recording} />
+            <Note>{props.recording ? "Microphone is on." : "The microphone stays off until you tap record."}</Note>
+            <Field value={props.instruction} onChangeText={props.onInstruction} multiline placeholder="Build a small stone house" accessibilityLabel="Build request" />
+            <Button title={props.busy ? "Working" : "Preview"} disabled={props.busy || !props.linked} onPress={props.onPlan} />
+            {!props.linked ? <Note>Pair a console player before a cloud preview can be created.</Note> : null}
+          </GlowCard>
+          {props.preview ? (
+            <GlowCard>
+              <Text style={styles.cardTitle}>{props.preview.summary}</Text>
+              <Note>{props.preview.estimatedBlocks} blocks · {props.preview.width} × {props.preview.height} × {props.preview.depth}</Note>
+              {props.preview.warnings.map((warning) => <Note key={warning}>{warning}</Note>)}
+              <Button title="Approve Build" onPress={props.onApprove} disabled={props.busy} />
+              <Button title="Save Blueprint" secondary onPress={props.onSave} />
+              <Button title="Discard preview" secondary onPress={props.onDiscard} />
+            </GlowCard>
+          ) : null}
+          {props.job ? <JobCard job={props.job} onCancel={props.onCancel} /> : null}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+function Library({ blueprints, onRefresh, onPreview, onFavorite, onDuplicate, onRename, onDelete, onBell }: {
+  blueprints: CloudBlueprint[];
+  onRefresh: () => void;
+  onPreview: (item: CloudBlueprint) => void;
+  onFavorite: (item: CloudBlueprint) => void;
+  onDuplicate: (item: CloudBlueprint) => void;
+  onRename: (item: CloudBlueprint) => void;
+  onDelete: (item: CloudBlueprint) => void;
+  onBell: () => void;
+}) {
+  return (
+    <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScreenHero compact subtitle="Blueprints saved from a real preview." onBell={onBell} />
+      <View style={styles.pad}>
+        <Button title="Refresh" secondary onPress={onRefresh} />
+        {blueprints.length === 0 ? <Note>No saved blueprints yet. Save one from a real preview.</Note> : null}
+        {blueprints.map((item) => (
+          <GlowCard key={item.id}>
+            <Text style={styles.cardTitle}>{item.name}</Text>
+            <Note>{item.summary}</Note>
+            <Note>{item.estimatedBlocks} blocks · {item.favorite ? "Favorite" : item.category}</Note>
+            <Button title="Preview again" onPress={() => onPreview(item)} />
+            <Button title={item.favorite ? "Unfavorite" : "Favorite"} secondary onPress={() => onFavorite(item)} />
+            <Button title="Duplicate" secondary onPress={() => onDuplicate(item)} />
+            <Button title="Rename" secondary onPress={() => onRename(item)} />
+            <Button title="Delete" danger onPress={() => onDelete(item)} />
+          </GlowCard>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+function Settings(props: {
+  email: string;
+  cloud: CloudSession | null;
+  connectionLabel: string;
+  configured: boolean;
+  mode: "local" | "community" | "supplied";
+  apiDraft: string;
+  onMode: (mode: "local" | "community" | "supplied") => void;
+  onDraft: (value: string) => void;
+  onSave: () => void;
+  onSignOut: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScreenHero compact subtitle="Account, connection, and what this phone is allowed to do." />
+      <View style={styles.pad}>
+        <Button title="Back" secondary onPress={props.onClose} />
+        <GlowCard>
+          <Text style={styles.cardTitle}>{props.email}</Text>
+          <Note>App 0.2.0. Remote push notifications are not configured.</Note>
+          <Note>Microphone access is requested only when you record.</Note>
+          <Note>{props.cloud?.entitlement.plan ? `Plan ${props.cloud.entitlement.plan}. ${props.cloud.entitlement.message || ""}` : "Subscription status appears after the API accepts this session."}</Note>
+          <Note>{props.configured ? `API ${props.connectionLabel}` : "Cloud API URL is not set."}</Note>
+          <Button title="Sign out" onPress={props.onSignOut} />
+        </GlowCard>
+        <GlowCard>
+          <Text style={styles.cardTitle}>Server connection</Text>
+          <Note>One app, three ways to reach an authorized VoiceCraft API. None of these places blocks on the phone.</Note>
+          <Button title="Local developer" secondary={props.mode !== "local"} onPress={() => props.onMode("local")} />
+          <Button title="Community server" secondary={props.mode !== "community"} onPress={() => props.onMode("community")} />
+          <Button title="Your server" secondary={props.mode !== "supplied"} onPress={() => props.onMode("supplied")} />
+          <Field value={props.apiDraft} onChangeText={props.onDraft} autoCapitalize="none" placeholder="https://api.example" accessibilityLabel="VoiceCraft API address" />
+          <Button title="Save connection" onPress={props.onSave} />
+          <Note>Local developer mode uses this computer on your private network.</Note>
+          <Note>Community server mode uses HTTPS. You can pair and revoke your device. You cannot administer their world from this phone.</Note>
+          <Note>Your server mode is for a Minecraft host you control.</Note>
+        </GlowCard>
+      </View>
+    </ScrollView>
   );
 }
 
 function JobCard({ job, onCancel }: { job: CloudJob; onCancel: () => void }) {
   const active = job.status === "queued" || job.status === "building" || job.status === "cancelling";
   return (
-    <Card>
+    <GlowCard>
       <Text style={styles.cardTitle}>{job.status}</Text>
       <Note>{job.confirmed} confirmed · {job.failed} failed · {job.total} planned</Note>
       {job.error ? <Note>{job.error}</Note> : null}
       {active ? <Button title="Cancel build" danger onPress={onCancel} /> : null}
-    </Card>
+    </GlowCard>
   );
 }
 
@@ -485,22 +549,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: c.background },
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, backgroundColor: c.background },
   auth: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 16 },
-  page: { padding: 20, gap: 16, paddingBottom: 32 },
-  stack: { gap: 14 },
-  brand: { color: c.text, fontSize: 18, fontWeight: "800", letterSpacing: 4 },
-  hero: { color: c.text, fontSize: 32, fontWeight: "800" },
-  kicker: { color: c.blue, fontSize: 12, fontWeight: "800", letterSpacing: 2 },
-  section: { color: c.text, fontSize: 18, fontWeight: "700" },
-  cardTitle: { color: c.text, fontSize: 18, fontWeight: "700" },
-  sub: { color: c.muted },
-  tabs: {
-    borderTopColor: c.border,
-    borderTopWidth: 1,
-    backgroundColor: "#0b1220",
-    flexGrow: 0,
-  },
-  tabRow: { paddingBottom: 8 },
-  tab: { alignItems: "center", paddingVertical: 12, paddingHorizontal: 14 },
-  tabText: { color: c.muted, fontSize: 12, fontWeight: "700" },
-  tabOn: { color: c.blue },
+  brandRow: { alignItems: "center", flexDirection: "row", gap: 8 },
+  brand: { color: c.text, fontSize: 28, fontWeight: "800" },
+  hero: { color: c.text, fontSize: 34, fontWeight: "800" },
+  cardTitle: { color: c.text, fontSize: 18, fontWeight: "800" },
+  sub: { color: c.muted, lineHeight: 20 },
+  pad: { gap: 12, padding: 16 },
 });

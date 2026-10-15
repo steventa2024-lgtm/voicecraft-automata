@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 16,
   },
-  button: { backgroundColor: c.blueDeep, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14 },
+  button: { backgroundColor: c.blueDeep, borderColor: "#6AABFF", borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14 },
   secondary: { backgroundColor: c.surfaceAlt },
   danger: { backgroundColor: "#6d2430" },
   disabled: { opacity: 0.45 },

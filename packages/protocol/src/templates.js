@@ -776,7 +776,7 @@ function shade(hex, factor) {
 }
 
 function projectVoxel(x, y, z) {
-  return { x: (x - z) * 12, y: (x + z) * 6 - y * 12 };
+  return { x: (x - z) * 14, y: (x + z) * 7 - y * 14 };
 }
 
 export function isometricPreview(blocks, width = 280, height = 200) {
@@ -784,12 +784,15 @@ export function isometricPreview(blocks, width = 280, height = 200) {
   if (solid.length === 0) return { width, height, cells: [], faces: [] };
   const occupied = new Set(solid.map((block) => `${block.x}|${block.y}|${block.z}`));
   const bounds = boundsOf(solid);
+  const heightSpan = Math.max(1, bounds.max.y - bounds.min.y);
   const faces = [];
   for (const block of solid) {
     const x = block.x - bounds.min.x;
     const y = block.y - bounds.min.y;
     const z = block.z - bounds.min.z;
-    const color = BLOCK_COLORS[block.block] || "#8ea0b8";
+    const baseColor = BLOCK_COLORS[block.block] || "#8ea0b8";
+    const lift = 0.84 + 0.22 * (y / heightSpan);
+    const color = shade(baseColor, lift);
     const worldX = block.x;
     const worldY = block.y;
     const worldZ = block.z;
@@ -802,13 +805,13 @@ export function isometricPreview(blocks, width = 280, height = 200) {
     const baseZ = projectVoxel(x, y, z + 1);
     const baseXZ = projectVoxel(x + 1, y, z + 1);
     if (!occupied.has(`${worldX}|${worldY + 1}|${worldZ}`)) {
-      faces.push({ points: [top, topX, topXZ, topZ], color: shade(color, 1.18), depth: x + z + y + 2 });
-    }
-    if (!occupied.has(`${worldX}|${worldY}|${worldZ + 1}`)) {
-      faces.push({ points: [topZ, topXZ, baseXZ, baseZ], color: shade(color, 0.62), depth: x + z + y + 1 });
+      faces.push({ points: [top, topX, topXZ, topZ], color: shade(color, 1.28), depth: x + z + y + 2 });
     }
     if (!occupied.has(`${worldX + 1}|${worldY}|${worldZ}`)) {
-      faces.push({ points: [topX, topXZ, baseXZ, baseX], color: shade(color, 0.82), depth: x + z + y });
+      faces.push({ points: [topX, topXZ, baseXZ, baseX], color: shade(color, 0.74), depth: x + z + y + 0.4 });
+    }
+    if (!occupied.has(`${worldX}|${worldY}|${worldZ + 1}`)) {
+      faces.push({ points: [topZ, topXZ, baseXZ, baseZ], color: shade(color, 0.48), depth: x + z + y });
     }
   }
   const xs = faces.flatMap((face) => face.points.map((point) => point.x));
@@ -817,13 +820,18 @@ export function isometricPreview(blocks, width = 280, height = 200) {
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
-  const scale = Math.min((width - 16) / Math.max(1, maxX - minX), (height - 16) / Math.max(1, maxY - minY));
+  const padX = Math.max(16, width * 0.07);
+  const padTop = Math.max(20, height * 0.16);
+  const padBottom = Math.max(18, height * 0.1);
+  const scale = Math.min((width - padX * 2) / Math.max(1, maxX - minX), (height - padTop - padBottom) / Math.max(1, maxY - minY));
+  const drawnWidth = (maxX - minX) * scale;
+  const originX = (width - drawnWidth) / 2;
   const drawn = faces
     .map((face) => ({
       ...face,
       points: face.points.map((point) => ({
-        x: 8 + (point.x - minX) * scale,
-        y: height - 8 - (point.y - minY) * scale,
+        x: originX + (point.x - minX) * scale,
+        y: padTop + (point.y - minY) * scale,
       })),
     }))
     .sort((left, right) => left.depth - right.depth);
