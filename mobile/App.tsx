@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import type { Session } from "@supabase/supabase-js";
@@ -85,6 +85,7 @@ function Root() {
   const [apiDraft, setApiDraft] = useState(getConnection().apiUrl);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!supabase) {
@@ -269,7 +270,7 @@ function Root() {
   if (!authConfigured || !session) {
     return (
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.auth} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={[styles.auth, { paddingTop: insets.top + 12 }]} keyboardShouldPersistTaps="handled">
           <View style={styles.brandRow}>
             <LogoMark />
             <Text style={styles.brand}>Zero<Text style={{ color: c.blue }}>Pulse</Text></Text>
@@ -305,7 +306,7 @@ function Root() {
   }
 
   return (
-    <SafeAreaView style={styles.flex} edges={["top"]}>
+    <SafeAreaView style={styles.flex} edges={["left", "right"]}>
       <View style={styles.flex}>
         {settingsOpen ? (
           <Settings

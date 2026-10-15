@@ -57,6 +57,23 @@ export function HeartIcon({ on }: { on: boolean }) {
   );
 }
 
+export function Glyph({ name, color = "#7CC0FF", size = 18 }: { name: string; color?: string; size?: number }) {
+  const box = { width: size, height: size, viewBox: "0 0 24 24" };
+  if (name === "mic") return <Svg {...box}><Rect x="9" y="3" width="6" height="10" rx="3" stroke={color} fill="none" strokeWidth={1.7} /><Path d="M6 11 a6 6 0 0 0 12 0 M12 17 v3" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  if (name === "prompt") return <Svg {...box}><Path d="M6 4 H16 L20 8 V20 H6 Z M16 4 V8 H20" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  if (name === "grid") return <Svg {...box}><Rect x="4" y="4" width="6" height="6" rx="1" stroke={color} fill="none" strokeWidth={1.6} /><Rect x="14" y="4" width="6" height="6" rx="1" stroke={color} fill="none" strokeWidth={1.6} /><Rect x="4" y="14" width="6" height="6" rx="1" stroke={color} fill="none" strokeWidth={1.6} /><Rect x="14" y="14" width="6" height="6" rx="1" stroke={color} fill="none" strokeWidth={1.6} /></Svg>;
+  if (name === "monitor") return <Svg {...box}><Rect x="3" y="4" width="18" height="12" rx="2" stroke={color} fill="none" strokeWidth={1.7} /><Path d="M8 20 H16 M12 16 V20" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  if (name === "cloud") return <Svg {...box}><Path d="M7 17 H17 A4 4 0 0 0 17 9 A5 5 0 0 0 8 10 A3.5 3.5 0 0 0 7 17 Z" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  if (name === "player") return <Svg {...box}><Circle cx="12" cy="8" r="3" stroke={color} fill="none" strokeWidth={1.7} /><Path d="M6 19 c1-4 11-4 12 0" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  if (name === "world") return <Svg {...box}><Path d="M5 16 L12 5 L19 16 Z M8 16 H16" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  if (name === "doc") return <Svg {...box}><Path d="M7 3 H15 L19 7 V21 H7 Z M15 3 V7 H19" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  if (name === "spark") return <Svg {...box}><Path d="M12 3 L14 10 L21 12 L14 14 L12 21 L10 14 L3 12 L10 10 Z" fill={color} /></Svg>;
+  if (name === "house") return <Svg {...box}><Path d="M4 12 L12 5 L20 12 V20 H4 Z" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  if (name === "castle") return <Svg {...box}><Path d="M4 20 V9 H8 V6 H11 V9 H13 V6 H16 V9 H20 V20 Z" stroke={color} fill="none" strokeWidth={1.6} /></Svg>;
+  if (name === "tree") return <Svg {...box}><Path d="M12 21 V12 M8 12 H16 M7 12 L12 4 L17 12" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+  return <Svg {...box}><Path d="M4 14 H20 M12 14 V6 M8 8 H16" stroke={color} fill="none" strokeWidth={1.7} /></Svg>;
+}
+
 export function BottomNav({ tab, onChange }: { tab: MainTab; onChange: (tab: MainTab) => void }) {
   const insets = useSafeAreaInsets();
   return (
@@ -66,7 +83,7 @@ export function BottomNav({ tab, onChange }: { tab: MainTab; onChange: (tab: Mai
         return (
           <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => onChange(item.id)} style={styles.navItem}>
             <NavIcon name={item.id} active={active} />
-            <Text style={[styles.navLabel, active && styles.navOn]}>{item.label}</Text>
+            <Text style={[styles.navLabel, active && styles.navOn]} numberOfLines={1}>{item.label}</Text>
             {active ? <View style={styles.navDot} /> : <View style={styles.navDotSpacer} />}
           </Pressable>
         );
@@ -87,13 +104,14 @@ export function ScreenHero({
   compact?: boolean;
 }) {
   const { width } = useWindowDimensions();
-  const height = compact ? 156 : 196;
+  const insets = useSafeAreaInsets();
+  const height = (compact ? 168 : 214) + insets.top;
   const blocks = useMemo(() => defaultBlocks("lakeside-cottage"), []);
   return (
-    <View style={{ height, width }}>
+    <View style={{ height, width, zIndex: 2 }}>
       <StructureArt blocks={blocks} width={width} height={height} rounded={0} />
       <View style={styles.heroShade} />
-      <View style={styles.heroCopy}>
+      <View style={[styles.heroCopy, { paddingTop: insets.top + 8 }]}>
         <View style={styles.brandRow}>
           <View style={styles.brand}>
             <LogoMark />

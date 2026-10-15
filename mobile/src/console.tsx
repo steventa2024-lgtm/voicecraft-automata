@@ -44,11 +44,17 @@ export function ConsoleScreen({
         <Text style={styles.meta}>Connect your console to start voice building</Text>
         <View style={styles.row}>
           <Pressable onPress={() => onPlatform("ps5")} style={[styles.platform, platform === "ps5" && styles.platformOn]}>
-            <Text style={styles.platformTitle}>PlayStation 5</Text>
+            <View style={styles.rowBetween}>
+              <Text style={styles.platformTitle} numberOfLines={1}>PlayStation 5</Text>
+              <View style={[styles.radio, platform === "ps5" && styles.radioOn]} />
+            </View>
             <Text style={platform === "ps5" ? styles.good : styles.meta}>{platform === "ps5" ? "Selected" : "Not selected"}</Text>
           </Pressable>
           <Pressable onPress={() => onPlatform("xbox")} style={[styles.platform, platform === "xbox" && styles.platformOn]}>
-            <Text style={styles.platformTitle}>Xbox</Text>
+            <View style={styles.rowBetween}>
+              <Text style={styles.platformTitle} numberOfLines={1}>Xbox</Text>
+              <View style={[styles.radio, platform === "xbox" && styles.radioOn]} />
+            </View>
             <Text style={platform === "xbox" ? styles.good : styles.meta}>{platform === "xbox" ? "Selected" : "Not selected"}</Text>
           </Pressable>
         </View>
@@ -138,7 +144,9 @@ const styles = StyleSheet.create({
   rowBetween: { alignItems: "flex-start", flexDirection: "row", gap: 8, justifyContent: "space-between" },
   platform: { borderColor: "#24558F", borderRadius: 16, borderWidth: 1, flex: 1, gap: 4, padding: 14 },
   platformOn: { borderColor: c.blue, backgroundColor: "#10284A" },
-  platformTitle: { color: c.text, fontSize: 16, fontWeight: "800" },
+  platformTitle: { color: c.text, flex: 1, fontSize: 15, fontWeight: "800" },
+  radio: { borderColor: "#6E86A8", borderRadius: 9, borderWidth: 2, height: 18, width: 18 },
+  radioOn: { backgroundColor: c.blue, borderColor: "#D7E9FF" },
   mini: { backgroundColor: "#0A162C", borderRadius: 14, flex: 1, gap: 4, padding: 8 },
   miniValue: { color: c.text, fontSize: 12, fontWeight: "800" },
   addressRow: { alignItems: "center", backgroundColor: "#081426", borderRadius: 12, flexDirection: "row", justifyContent: "space-between", padding: 12 },

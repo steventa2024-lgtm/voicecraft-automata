@@ -3,7 +3,7 @@ import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, useWin
 import "expo-sqlite/localStorage/install";
 import { generateTemplate, listTemplates } from "../../packages/protocol/src/templates.js";
 import { approveOnPc, pcPaired, previewOnPc, savedPcHost } from "./lib/companion";
-import { GlowCard, HeartIcon, ModeMenu, ScreenHero } from "./chrome";
+import { GlowCard, Glyph, HeartIcon, ModeMenu, ScreenHero } from "./chrome";
 import { defaultBlocks, StructureArt } from "./preview";
 import { theme as c } from "./theme";
 import { Button, Field, Note } from "./ui";
@@ -40,11 +40,11 @@ const FAVORITES_KEY = "voicecraft.catalog.favorites";
 const SAVED_KEY = "voicecraft.local.blueprints";
 
 const GROUPS = [
-  { id: "All", label: "All", categories: null as string[] | null },
-  { id: "Houses", label: "Houses", categories: ["Homes & Cabins", "Modern & Luxury"] },
-  { id: "Castles", label: "Castles", categories: ["Medieval & Fortified"] },
-  { id: "Nature", label: "Nature", categories: ["Fantasy & Magic", "Temples & Monuments"] },
-  { id: "Farms", label: "Farms", categories: ["Farms & Nature"] },
+  { id: "All", label: "All", icon: "grid", categories: null as string[] | null },
+  { id: "Houses", label: "Houses", icon: "house", categories: ["Homes & Cabins", "Modern & Luxury"] },
+  { id: "Castles", label: "Castles", icon: "castle", categories: ["Medieval & Fortified"] },
+  { id: "Nature", label: "Nature", icon: "tree", categories: ["Fantasy & Magic", "Temples & Monuments"] },
+  { id: "Farms", label: "Farms", icon: "farm", categories: ["Farms & Nature"] },
 ];
 
 const STYLES = [
@@ -157,6 +157,7 @@ export function CatalogScreen({ onOpen, onBell }: { onOpen: (id: string) => void
                   const active = group === item.id && !category;
                   return (
                     <Pressable key={item.id} onPress={() => { setGroup(item.id); setCategory(null); }} style={[styles.pill, active && styles.pillOn]}>
+                      <Glyph name={item.icon} size={14} color={active ? "#F4F8FF" : "#8EA4C4"} />
                       <Text style={[styles.pillText, active && styles.pillTextOn]}>{item.label}</Text>
                     </Pressable>
                   );
@@ -452,7 +453,7 @@ const styles = StyleSheet.create({
   filter: { alignItems: "center", borderColor: c.border, borderRadius: 14, borderWidth: 1, height: 48, justifyContent: "center", width: 48 },
   filterText: { color: c.text, fontSize: 18 },
   pills: { gap: 8 },
-  pill: { borderColor: "#24558F", borderRadius: 20, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 },
+  pill: { alignItems: "center", borderColor: "#24558F", borderRadius: 20, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 },
   pillOn: { backgroundColor: c.blueDeep, borderColor: c.blue },
   pillText: { color: c.muted, fontWeight: "700" },
   pillTextOn: { color: c.text },
