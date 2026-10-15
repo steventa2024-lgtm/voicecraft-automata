@@ -12,7 +12,7 @@ async function syncSubscription(subscription: Stripe.Subscription, explicitUserI
   let userId = explicitUserId || subscription.metadata["userId"];
   if (!userId && customerId) {
     const { data } = await db
-      .from("profiles")
+      .from("voicecraft_profiles")
       .select("id")
       .eq("stripe_customer_id", customerId)
       .maybeSingle();
@@ -26,7 +26,7 @@ async function syncSubscription(subscription: Stripe.Subscription, explicitUserI
     ? metadataTier
     : tierForPrice(priceId) || "starter";
   const { error } = await db
-    .from("profiles")
+    .from("voicecraft_profiles")
     .update({
       stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
@@ -57,7 +57,7 @@ export async function handleStripeWebhook(request: Request) {
 
     const db = supabaseAdmin as any;
     const { data: seen } = await db
-      .from("stripe_webhook_events")
+      .from("voicecraft_stripe_webhook_events")
       .select("event_id")
       .eq("event_id", event.id)
       .maybeSingle();
@@ -81,7 +81,7 @@ export async function handleStripeWebhook(request: Request) {
       await syncSubscription(event.data.object as Stripe.Subscription);
     }
 
-    const { error } = await db.from("stripe_webhook_events").insert({
+    const { error } = await db.from("voicecraft_stripe_webhook_events").insert({
       event_id: event.id,
       event_type: event.type,
     });

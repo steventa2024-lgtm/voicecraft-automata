@@ -54,7 +54,7 @@ export async function requireAdmin(request: Request): Promise<User> {
   const user = await requireApiUser(request);
   const db = supabaseAdmin as any;
   const { data, error } = await db
-    .from("profiles")
+    .from("voicecraft_profiles")
     .select("is_admin,email")
     .eq("id", user.id)
     .maybeSingle();

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/license/redeem")({
         throw new ApiError(400, "hwid_required", "Connect the desktop companion before redeeming a key.");
       }
       const db = supabaseAdmin as any;
-      const { data, error } = await db.rpc("redeem_license_key", {
+      const { data, error } = await db.rpc("voicecraft_redeem_license_key", {
         p_user_id: user.id,
         p_key_hash: await sha256(normalized),
         p_hwid_hash: await sha256(hwid.trim()),

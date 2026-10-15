@@ -20,7 +20,7 @@ export async function issueRunnerToken(userId: string, deviceId?: string) {
       insert: (value: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
     };
   };
-  const { error } = await db.from("runner_token_uses").insert({
+  const { error } = await db.from("voicecraft_runner_token_uses").insert({
     jti: issued.payload.jti,
     user_id: userId,
     expires_at: issued.expiresAt,

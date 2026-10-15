@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/builder/release")({
             throw new ApiError(400, "invalid_placed_count", "placed must be a non-negative integer.");
           }
           const db = supabaseAdmin as any;
-          const { data, error } = await db.rpc("release_builder_reservation", {
+          const { data, error } = await db.rpc("voicecraft_release_builder_reservation", {
             p_user_id: payload.sub,
             p_requested_blocks: requestedBlocks,
             p_placed: placed,

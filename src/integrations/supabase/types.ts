@@ -14,7 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_allowlist: {
+      voicecraft_admin_allowlist: {
         Row: {
           created_at: string
           email: string
@@ -29,7 +29,7 @@ export type Database = {
         }
         Relationships: []
       }
-      daily_usage: {
+      voicecraft_daily_usage: {
         Row: {
           block_count: number
           task_count: number
@@ -56,12 +56,12 @@ export type Database = {
             foreignKeyName: "daily_usage_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "voicecraft_profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      license_keys: {
+      voicecraft_license_keys: {
         Row: {
           activated_at: string | null
           claimed_by_user_id: string | null
@@ -103,19 +103,19 @@ export type Database = {
             foreignKeyName: "license_keys_claimed_by_user_id_fkey"
             columns: ["claimed_by_user_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "voicecraft_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "license_keys_created_by_user_id_fkey"
             columns: ["created_by_user_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "voicecraft_profiles"
             referencedColumns: ["id"]
           },
         ]
       }
-      profiles: {
+      voicecraft_profiles: {
         Row: {
           created_at: string
           daily_usage_counter: Json
@@ -157,7 +157,7 @@ export type Database = {
         }
         Relationships: []
       }
-      stripe_webhook_events: {
+      voicecraft_stripe_webhook_events: {
         Row: {
           event_id: string
           event_type: string
@@ -180,12 +180,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      redeem_license_key: {
+      voicecraft_redeem_license_key: {
         Args: { p_hwid_hash: string; p_key_hash: string; p_user_id: string }
         Returns: Json
       }
-      revoke_license_key: { Args: { p_key_id: string }; Returns: Json }
-      verify_and_consume_builder_run: {
+      voicecraft_revoke_license_key: { Args: { p_key_id: string }; Returns: Json }
+      voicecraft_verify_and_consume_builder_run: {
         Args: { p_requested_blocks: number; p_user_id: string }
         Returns: Json
       }
