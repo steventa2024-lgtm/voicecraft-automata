@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "VoiceCraft Mobile",
+    "slug": "voicecraft-mobile",
+    "scheme": "voicecraft",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zeropulse.voicecraftmobile",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "VoiceCraft uses the microphone only when you choose to record a voice building request."
+      }
+    },
+    "android": {
+      "package": "com.zeropulse.voicecraftmobile",
+      "permissions": ["RECORD_AUDIO"]
+    },
+    "plugins": [
+      ["expo-audio", {
+        "microphonePermission": "VoiceCraft uses the microphone only when you choose to record a voice building request.",
+        "enableBackgroundRecording": false
+      }]
+    ],
+    "extra": {
+      "product": "ZeroPulse VoiceCraft Companion"
+    }
+  }
+}
