@@ -17,20 +17,38 @@
     "appId": "dev.zeropulse.voicecraft",
     "productName": "ZeroPulse VoiceCraft",
     "artifactName": "ZeroPulse-VoiceCraft-Setup-${version}.${ext}",
-    "directories": { "output": "../dist-desktop" },
+    "directories": {
+      "output": "../dist-desktop"
+    },
     "files": [
       "dist/**",
       "electron/**",
       "package.json"
     ],
     "extraResources": [
-      { "from": "../bridge", "to": "bridge", "filter": ["**/*", "!*.md", "!package-lock.json"] },
-      { "from": "../packages/protocol", "to": "packages/protocol", "filter": ["**/*"] }
+      {
+        "from": "../bridge",
+        "to": "bridge",
+        "filter": [
+          "**/*",
+          "!*.md",
+          "!package-lock.json"
+        ]
+      },
+      {
+        "from": "../packages/protocol",
+        "to": "packages/protocol",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "asar": false,
     "win": {
       "icon": "build/icon.ico",
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "signAndEditExecutable": false
     },
     "nsis": {
@@ -40,12 +58,17 @@
       "createStartMenuShortcut": true,
       "shortcutName": "ZeroPulse VoiceCraft"
     },
-    "mac": { "target": ["dmg"], "category": "public.app-category.games" }
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.games"
+    }
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "@vitejs/plugin-react": "^5.2.0",
-    "electron": "^33.4.11",
+    "electron": "^35.7.5",
     "electron-builder": "^25.1.8",
     "tailwindcss": "^4.2.1",
     "vite": "^6.3.5"

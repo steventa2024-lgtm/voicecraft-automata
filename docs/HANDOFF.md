@@ -118,7 +118,7 @@ This migration has not been applied to the hosted project from this environment.
 - Root: existing website dependencies, including Zod.
 - `packages/protocol`: Zod.
 - `bridge`: existing Mineflayer stack, plus Zod. Node engine is `>=22`.
-- `desktop`: Electron 33.4.11, Electron Builder 25, Vite 6, React 19, Three 0.170, Tailwind 4.
+- `desktop`: Electron 35.7.5 (Node 22, required for `node:sqlite`), Electron Builder 25, Vite 6, React 19, Three 0.170, Tailwind 4. Electron 33 cannot open the app because its Node build has no `node:sqlite`.
 
 No multi-gigabyte model is bundled.
 
@@ -157,7 +157,7 @@ Not executed here:
 
 ## 16. Windows packaging
 
-Electron Builder 25.1.8, NSIS, x64, Electron 33.4.11, `signAndEditExecutable: false`. No certificate was available. The build log says signing was skipped. SmartScreen will warn until the binary is signed.
+Electron Builder 25.1.8, NSIS, x64, `signAndEditExecutable: false`. No certificate was available. The build log says signing was skipped. SmartScreen will warn until the binary is signed. The 109 MB installer produced before the Electron 35 upgrade still embeds Electron 33 and exits on launch because `node:sqlite` is missing. Rebuild with `bash desktop/build.sh` before distributing that file.
 
 Cross-compilation used Wine 9.0 on Linux. The successful log line is `EXIT:0`. An earlier attempt without Wine exited 1 and left a 185 KB stub; that stub was replaced by the successful package.
 
