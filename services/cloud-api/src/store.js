@@ -45,7 +45,8 @@ export function openCloudStore(directory, pepper) {
       player_uuid text not null,
       player_name text not null,
       expires_at integer not null,
-      consumed_by text
+      consumed_by text,
+      bedrock integer not null default 0
     );
     create table if not exists links (
       id text primary key,
@@ -55,7 +56,8 @@ export function openCloudStore(directory, pepper) {
       player_uuid text not null,
       player_name text not null,
       created_at integer not null,
-      revoked_at integer
+      revoked_at integer,
+      bedrock integer not null default 0
     );
     create table if not exists previews (
       id text primary key,
@@ -103,6 +105,18 @@ export function openCloudStore(directory, pepper) {
     );
     create unique index if not exists jobs_idempo on jobs(user_id, idempotency_key) where idempotency_key is not null;
   `);
+  for (const sql of [
+    "alter table pairing_challenges add column bedrock integer not null default 0",
+    "alter table links add column bedrock integer not null default 0",
+    "alter table jobs add column reservation_kind text",
+    "alter table jobs add column reservation_token text",
+  ]) {
+    try {
+      db.exec(sql);
+    } catch {
+      /* column already exists */
+    }
+  }
 
   const day = () => new Date().toISOString().slice(0, 10);
 
@@ -153,26 +167,26 @@ export function openCloudStore(directory, pepper) {
         on conflict(user_id, day) do update set task_count = excluded.task_count, block_count = excluded.block_count
       `).run(userId, day(), usage.task_count || 0, usage.block_count || 0);
     },
-    issuePairing({ worldId, worldName, platform, playerUuid, playerName, ttlMs = 5 * 60_000 }) {
+    issuePairing({ worldId, worldName, playerUuid, playerName, bedrock = false, ttlMs = 5 * 60_000 }) {
       const plain = code();
       const now = Date.now();
       transaction(() => {
         db.prepare("insert into worlds (id, name) values (?, ?) on conflict(id) do update set name = excluded.name").run(worldId, worldName);
         db.prepare(`
-          insert into pairing_challenges (code_hash, world_id, platform, player_uuid, player_name, expires_at)
-          values (?, ?, ?, ?, ?, ?)
-        `).run(hashCode(plain, pepper), worldId, platform, playerUuid, playerName, now + ttlMs);
+          insert into pairing_challenges (code_hash, world_id, platform, player_uuid, player_name, expires_at, bedrock)
+          values (?, ?, 'pending', ?, ?, ?, ?)
+        `).run(hashCode(plain, pepper), worldId, playerUuid, playerName, now + ttlMs, bedrock ? 1 : 0);
       });
-      return { code: plain, expiresAt: now + ttlMs };
+      return { code: plain, expiresAt: now + ttlMs, bedrock: Boolean(bedrock) };
     },
-    claimPairing({ userId, code: plain, platform }) {
+    claimPairing({ userId, code: plain, console: consoleType }) {
       return transaction(() => {
         const row = db.prepare("select * from pairing_challenges where code_hash = ?").get(hashCode(plain, pepper));
         if (!row || row.consumed_by || row.expires_at < Date.now()) {
           throw new HttpError(400, "That pairing code is invalid, expired, or already used.");
         }
-        if (row.platform !== platform) {
-          throw new HttpError(400, "Choose the same console that joined the server.");
+        if (!["ps5", "xbox"].includes(consoleType)) {
+          throw new HttpError(400, "Choose PlayStation 5 or Xbox.");
         }
         const existing = db.prepare("select user_id from links where player_uuid = ? and revoked_at is null").get(row.player_uuid);
         if (existing && existing.user_id !== userId) {
@@ -182,15 +196,16 @@ export function openCloudStore(directory, pepper) {
         const id = randomUUID();
         db.prepare("update links set revoked_at = ? where user_id = ? and revoked_at is null").run(Date.now(), userId);
         db.prepare(`
-          insert into links (id, user_id, world_id, platform, player_uuid, player_name, created_at)
-          values (?, ?, ?, ?, ?, ?, ?)
-        `).run(id, userId, row.world_id, row.platform, row.player_uuid, row.player_name, Date.now());
+          insert into links (id, user_id, world_id, platform, player_uuid, player_name, created_at, bedrock)
+          values (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, userId, row.world_id, consoleType, row.player_uuid, row.player_name, Date.now(), row.bedrock ? 1 : 0);
         const world = db.prepare("select name from worlds where id = ?").get(row.world_id);
         return {
           linkId: id,
           worldId: row.world_id,
           worldName: world.name,
-          platform: row.platform,
+          platform: consoleType,
+          bedrock: Boolean(row.bedrock),
           playerName: row.player_name,
           playerUuid: row.player_uuid,
         };
@@ -222,8 +237,10 @@ export function openCloudStore(directory, pepper) {
     previewForUser(id, userId) {
       return db.prepare("select * from previews where id = ? and user_id = ?").get(id, userId) || null;
     },
-    createJob({ userId, worldId, previewId, idempotencyKey, total, charge }) {
+    createJob({ userId, worldId, previewId, idempotencyKey, total, charge, reservationKind, reservationToken }) {
       return transaction(() => {
+        const priorPreview = db.prepare("select * from jobs where preview_id = ?").get(previewId);
+        if (priorPreview) return { job: priorPreview, created: false };
         if (idempotencyKey) {
           const prior = db.prepare("select * from jobs where user_id = ? and idempotency_key = ?").get(userId, idempotencyKey);
           if (prior) {
@@ -247,11 +264,22 @@ export function openCloudStore(directory, pepper) {
         const id = randomUUID();
         const now = Date.now();
         db.prepare(`
-          insert into jobs (id, user_id, world_id, preview_id, idempotency_key, status, total_ops, created_at, updated_at)
-          values (?, ?, ?, ?, ?, 'queued', ?, ?, ?)
-        `).run(id, userId, worldId, previewId, idempotencyKey, total, now, now);
+          insert into jobs (id, user_id, world_id, preview_id, idempotency_key, status, total_ops, created_at, updated_at, reservation_kind, reservation_token)
+          values (?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?)
+        `).run(id, userId, worldId, previewId, idempotencyKey || null, total, now, now, reservationKind || null, reservationToken || null);
         return { job: db.prepare("select * from jobs where id = ?").get(id), created: true };
       });
+    },
+    linkById(id) {
+      return db.prepare("select * from links where id = ?").get(id) || null;
+    },
+    updateJobProgress(id, confirmed, failed) {
+      db.prepare("update jobs set confirmed = ?, failed_ops = ?, updated_at = ? where id = ? and status in ('building', 'cancelling')").run(
+        confirmed,
+        failed,
+        Date.now(),
+        id,
+      );
     },
     jobForUser(id, userId) {
       return db.prepare("select * from jobs where id = ? and user_id = ?").get(id, userId) || null;

@@ -30,6 +30,7 @@ export type CloudSession = {
     worldId: string;
     worldName: string;
     platform: string;
+    bedrock: boolean;
     playerName: string;
     pairedAt: number;
   } | null;

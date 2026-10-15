@@ -33,5 +33,5 @@ jobs:
         working-directory: desktop
       - run: npm run build
         working-directory: desktop
-      - run: npx tsc -p tsconfig.json --noEmit
+      - run: npm exec -- tsc -p tsconfig.json --noEmit
         working-directory: desktop

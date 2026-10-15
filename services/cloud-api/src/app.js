@@ -144,15 +144,17 @@ export function createApp(options) {
         const body = await readJson(request);
         if (!/^[0-9a-f-]{36}$/i.test(body.playerUuid || "")) throw new HttpError(400, "A server-verified player UUID is required.");
         if (!/^[A-Za-z0-9_]{3,16}$/.test(body.playerName || "")) throw new HttpError(400, "Player name is invalid.");
-        if (!["ps5", "xbox", "bedrock"].includes(body.platform)) throw new HttpError(400, "Platform is invalid.");
+        if (body.platform === "ps5" || body.platform === "xbox") {
+          throw new HttpError(400, "The host must not guess PlayStation versus Xbox. Send the verified player identity and bedrock compatibility only.");
+        }
         const worldId = String(body.worldId || "public-build").slice(0, 64);
         const worldName = String(body.worldName || "VoiceCraft Cloud").slice(0, 80);
         return json(200, store.issuePairing({
           worldId,
           worldName,
-          platform: body.platform,
           playerUuid: body.playerUuid.toLowerCase(),
           playerName: body.playerName,
+          bedrock: Boolean(body.bedrock),
         }));
       }
 
@@ -179,6 +181,7 @@ export function createApp(options) {
                 worldId: link.world_id,
                 worldName: link.world_name,
                 platform: link.platform,
+                bedrock: Boolean(link.bedrock),
                 playerName: link.player_name,
                 pairedAt: link.created_at,
               }
@@ -192,7 +195,7 @@ export function createApp(options) {
         const body = await readJson(request);
         const code = String(body.code || "").trim().toUpperCase();
         if (!/^[A-Z0-9]{8}$/.test(code)) throw new HttpError(400, "Enter the 8 character code from the Minecraft server.");
-        const claimed = store.claimPairing({ userId: user.id, code, platform: body.platform });
+        const claimed = store.claimPairing({ userId: user.id, code, console: body.platform });
         return json(200, claimed);
       }
 
@@ -246,6 +249,10 @@ export function createApp(options) {
         const preview = store.previewForUser(body.previewId, user.id);
         if (!preview) throw new HttpError(404, "That preview was not found.");
         if (preview.expires_at < Date.now()) throw new HttpError(410, "That preview expired. Generate it again.");
+        const link = store.activeLink(user.id);
+        if (!link || link.id !== preview.link_id || link.world_id !== preview.world_id) {
+          throw new HttpError(403, "The pairing for this preview is no longer active.");
+        }
         const idempotencyKey = request.headers.get("idempotency-key") || null;
         if (idempotencyKey && idempotencyKey.length > 80) throw new HttpError(400, "Idempotency key is too long.");
         const replay = store.jobByIdempotency(user.id, idempotencyKey);
@@ -254,8 +261,12 @@ export function createApp(options) {
           return json(202, publicJob(replay));
         }
         let charge = null;
+        let reservationKind = "local";
+        let reservationToken = null;
         if (options.reserveRemote) {
-          await options.reserveRemote(token, preview.block_count);
+          const reserved = await options.reserveRemote(token, preview.block_count);
+          reservationKind = "remote";
+          reservationToken = reserved?.token || null;
         } else {
           const state = await profileFor(user, token);
           const decision = evaluateEntitlement({ ...state, requestedBlocks: preview.block_count });
@@ -269,6 +280,8 @@ export function createApp(options) {
           idempotencyKey,
           total: preview.block_count,
           charge,
+          reservationKind,
+          reservationToken,
         });
         return json(202, publicJob(created.job));
       }

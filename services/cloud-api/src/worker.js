@@ -1,5 +1,11 @@
 import { buildPlan } from "../../../packages/protocol/src/index.js";
 
+async function settle(job, confirmed, deps, refundBlocks) {
+  if (job.reservation_kind === "remote" && job.reservation_token && deps.releaseRemote && confirmed === 0) {
+    await deps.releaseRemote(job.reservation_token, refundBlocks, confirmed);
+  }
+}
+
 export async function advanceJob(store, deps = {}) {
   const job = store.claimNextJob();
   if (!job) return null;
@@ -13,6 +19,7 @@ export async function advanceJob(store, deps = {}) {
       error: "Cancelled before placement. No blocks were placed.",
       refundBlocks,
     });
+    await settle(job, 0, deps, refundBlocks);
     return store.jobById(job.id);
   }
   try {
@@ -27,6 +34,7 @@ export async function advanceJob(store, deps = {}) {
           : "Minecraft host is not reachable. No blocks were placed.",
         refundBlocks,
       });
+      await settle(job, 0, deps, refundBlocks);
       return store.jobById(job.id);
     }
     const instruction = JSON.parse(preview.instruction_json);
@@ -49,6 +57,7 @@ export async function advanceJob(store, deps = {}) {
       error: result.error || null,
       refundBlocks: confirmed === 0 ? refundBlocks : 0,
     });
+    await settle(job, confirmed, deps, refundBlocks);
   } catch (error) {
     store.finishJob(job.id, {
       status: "failed",
@@ -57,6 +66,7 @@ export async function advanceJob(store, deps = {}) {
       error: error instanceof Error ? error.message : "The build failed before placement.",
       refundBlocks,
     });
+    await settle(job, 0, deps, refundBlocks);
   }
   return store.jobById(job.id);
 }

@@ -35,15 +35,18 @@ The phone never receives a runner token and never sends Minecraft console comman
 
 Preview does not insert a job. Confirm checks the exact preview, charges one reservation, and queues a job. The worker marks the job failed and refunds that reservation when no blocks were confirmed. A cancelled queued job is stored as `cancelled`.
 
-When `VOICECRAFT_SITE_URL` is set, confirm reserves allowance through the existing `/api/builder/token` and `/api/builder/verify-run` routes. That path was not called against a live Supabase project here.
+When `VOICECRAFT_SITE_URL` is set, confirm reserves allowance through the existing `/api/builder/token` and `/api/builder/verify-run` routes. The runner token is stored only on the server job row. If the job fails or is cancelled before any confirmed placement, the worker calls `/api/builder/release`. Partial builds keep the charge. That remote path was not called against a live Supabase project here.
+
+`CLOUD_LOCAL_ACCOUNTS=1` uses the SQLite ledger in this process. It is refused when `NODE_ENV` or `CLOUD_ENV` is `production`. For local testing, export the flag only on a development machine and create a tester profile with `unlimited_tester` or an active plan row in that SQLite file. Do not turn the flag on for a public host.
 
 ## Pairing
 
 1. The player joins the hosted world.
 2. `services/minecraft-host/chat-bridge.js` hears `vc pair`, reads the UUID from the server player list, and asks the API for a code.
-3. The player types that code into the phone while signed in.
-4. The code is stored only as a hash, expires in five minutes, and cannot be claimed twice.
-5. A player UUID already linked to another account is rejected.
+3. The issue request sends the verified UUID and a `bedrock` flag only. It must not send `ps5` or `xbox`.
+4. The player types that code into the phone while signed in and chooses PlayStation 5 or Xbox in the app.
+5. The code is stored only as a hash, expires in five minutes, and cannot be claimed twice.
+6. A player UUID already linked to another account is rejected.
 
 Offline-mode chat names without a UUID are ignored. `CLOUD_REQUIRE_FLOODGATE=1` accepts only Floodgate UUIDs. This bridge was not connected to a live server.
 

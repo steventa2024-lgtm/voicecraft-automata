@@ -4,11 +4,16 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { localAccountsAllowed } from "../services/cloud-api/src/accounts.js";
 import { createApp } from "../services/cloud-api/src/app.js";
 import { HttpError } from "../services/cloud-api/src/errors.js";
+import { readIncoming } from "../services/cloud-api/src/http.js";
 import { openCloudStore } from "../services/cloud-api/src/store.js";
 import { advanceJob } from "../services/cloud-api/src/worker.js";
 import { isAllowedCloudUrl } from "../mobile/src/lib/api-url.js";
+import { worldBlocksFromPlan } from "../services/build-worker/plan-world.js";
+import { isFloodgateUuid, pairingIssueBody } from "../services/minecraft-host/chat-bridge.js";
+import { buildPlan, parseCommand } from "../packages/protocol/src/index.js";
 
 const users = {
   ada: { id: "00000000-0000-4000-8000-000000000001", email: "ada@example.com" },
@@ -79,7 +84,7 @@ async function pair(base, store) {
     body: JSON.stringify({
       playerUuid: "11111111-1111-4111-8111-111111111111",
       playerName: "ConsoleAda",
-      platform: "ps5",
+      bedrock: true,
       worldId: "public-build",
       worldName: "VoiceCraft Cloud",
     }),
@@ -135,7 +140,7 @@ test("pairing codes expire their usefulness after one claim and do not cross acc
     const unauth = await fetch(`${server.url}/api/mobile/pairing/issue`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ playerUuid: "11111111-1111-4111-8111-111111111111", playerName: "ConsoleAda", platform: "ps5" }),
+      body: JSON.stringify({ playerUuid: "11111111-1111-4111-8111-111111111111", playerName: "ConsoleAda", bedrock: true }),
     });
     assert.equal(unauth.status, 401);
   } finally {
@@ -294,4 +299,194 @@ test("transcription rejects anonymous and oversized uploads and does not approve
     await server.close();
     cleanup();
   }
+});
+
+test("pairing uses server identity and user-selected console, not a guessed PS5/Xbox UUID", async () => {
+  const { store, cleanup } = temporaryStore();
+  const server = await listen(appFor(store));
+  try {
+    const guessed = await fetch(`${server.url}/api/mobile/pairing/issue`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-server-token": "server-token-0123456789" },
+      body: JSON.stringify({
+        playerUuid: "00000000-0000-0000-0009-000000000001",
+        playerName: "BedrockAda",
+        platform: "ps5",
+      }),
+    });
+    assert.equal(guessed.status, 400);
+
+    const issued = await fetch(`${server.url}/api/mobile/pairing/issue`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-server-token": "server-token-0123456789" },
+      body: JSON.stringify({
+        playerUuid: "00000000-0000-0000-0009-000000000001",
+        playerName: "BedrockAda",
+        bedrock: true,
+        worldId: "public-build",
+        worldName: "VoiceCraft Cloud",
+      }),
+    });
+    const issueBody = await issued.json();
+    assert.equal(issued.status, 200);
+    assert.equal(issueBody.bedrock, true);
+
+    const xbox = await fetch(`${server.url}/api/mobile/pairing/claim`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer ada-token" },
+      body: JSON.stringify({ code: issueBody.code, platform: "xbox" }),
+    });
+    const claim = await xbox.json();
+    assert.equal(xbox.status, 200, claim.message);
+    assert.equal(claim.platform, "xbox");
+    assert.equal(claim.bedrock, true);
+    assert.equal(claim.playerUuid, "00000000-0000-0000-0009-000000000001");
+
+    const replay = await fetch(`${server.url}/api/mobile/pairing/claim`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer bye-token" },
+      body: JSON.stringify({ code: issueBody.code, platform: "ps5" }),
+    });
+    assert.equal(replay.status, 400);
+
+    const second = await fetch(`${server.url}/api/mobile/pairing/issue`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-server-token": "server-token-0123456789" },
+      body: JSON.stringify({
+        playerUuid: "00000000-0000-0000-0009-000000000001",
+        playerName: "BedrockAda",
+        bedrock: true,
+        worldId: "public-build",
+        worldName: "VoiceCraft Cloud",
+      }),
+    }).then((response) => response.json());
+    const stolen = await fetch(`${server.url}/api/mobile/pairing/claim`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer bye-token" },
+      body: JSON.stringify({ code: second.code, platform: "ps5" }),
+    });
+    assert.equal(stolen.status, 409);
+  } finally {
+    await server.close();
+    cleanup();
+  }
+});
+
+test("expired pairing codes cannot be claimed", async () => {
+  const { store, cleanup } = temporaryStore();
+  const issued = store.issuePairing({
+    worldId: "public-build",
+    worldName: "VoiceCraft Cloud",
+    playerUuid: "22222222-2222-4222-8222-222222222222",
+    playerName: "LateAda",
+    bedrock: true,
+    ttlMs: 1,
+  });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.throws(() => store.claimPairing({ userId: users.ada.id, code: issued.code, console: "ps5" }), HttpError);
+  cleanup();
+});
+
+test("local entitlement mode is refused in production", () => {
+  assert.equal(localAccountsAllowed({ CLOUD_LOCAL_ACCOUNTS: "1", NODE_ENV: "development" }), true);
+  assert.equal(localAccountsAllowed({ NODE_ENV: "development" }), false);
+  assert.throws(() => localAccountsAllowed({ CLOUD_LOCAL_ACCOUNTS: "1", NODE_ENV: "production" }));
+  assert.throws(() => localAccountsAllowed({ CLOUD_LOCAL_ACCOUNTS: "1", CLOUD_ENV: "production" }));
+});
+
+test("the pairing bridge never labels a Floodgate UUID as PlayStation or Xbox", () => {
+  assert.equal(isFloodgateUuid("00000000-0000-0000-0009-000000000001"), true);
+  const body = pairingIssueBody({
+    uuid: "00000000-0000-0000-0009-000000000001",
+    username: "ConsoleAda",
+  });
+  assert.equal(body.bedrock, true);
+  assert.equal(Object.hasOwn(body, "platform"), false);
+});
+
+test("approved plans become world coordinates without inventing a successful placement", () => {
+  const instruction = parseCommand("build a small stone house");
+  const plan = buildPlan({ ...instruction, action: "build", valid: true });
+  const blocks = worldBlocksFromPlan(plan, instruction, { x: 10, y: 64, z: 20 }, 0);
+  assert.equal(blocks.length, plan.count);
+  assert.ok(blocks.every((block) => Number.isInteger(block.x) && Number.isInteger(block.y) && block.block));
+});
+
+test("a worker executor that places blocks records confirmed operations and not a fake 100%", async () => {
+  const { store, cleanup } = temporaryStore();
+  const server = await listen(appFor(store));
+  try {
+    const paired = await pair(server.url, store);
+    const preview = await fetch(`${server.url}/api/mobile/builds/preview`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer ada-token" },
+      body: JSON.stringify({ worldId: paired.claim.worldId, instruction: "build a small stone house" }),
+    }).then((response) => response.json());
+    await fetch(`${server.url}/api/mobile/builds/confirm`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer ada-token" },
+      body: JSON.stringify({ previewId: preview.previewId }),
+    });
+    const finished = await advanceJob(store, {
+      probe: async () => true,
+      execute: async ({ plan }) => ({ confirmed: plan.count - 2, failed: 2 }),
+    });
+    assert.equal(finished.status, "completed_with_errors");
+    assert.equal(finished.confirmed, preview.estimatedBlocks - 2);
+    assert.equal(finished.failed_ops, 2);
+  } finally {
+    await server.close();
+    cleanup();
+  }
+});
+
+test("remote reservations are released when a job fails before any placement", async () => {
+  const { store, cleanup } = temporaryStore();
+  store.createJob({
+    userId: users.ada.id,
+    worldId: "public-build",
+    previewId: "00000000-0000-4000-8000-000000000099",
+    total: 12,
+    reservationKind: "remote",
+    reservationToken: "runner-token",
+  });
+  store.savePreview({
+    id: "00000000-0000-4000-8000-000000000099",
+    userId: users.ada.id,
+    worldId: "public-build",
+    linkId: "link",
+    summary: "house",
+    instructionJson: JSON.stringify(parseCommand("build a small stone house")),
+    blockCount: 12,
+    width: 8,
+    depth: 8,
+    height: 6,
+    floors: 1,
+    material: "stone",
+    structure: "house",
+    warningsJson: "[]",
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 60_000,
+  });
+  let released = null;
+  const finished = await advanceJob(store, {
+    probe: async () => false,
+    execute: null,
+    releaseRemote: async (token, requestedBlocks, placed) => {
+      released = { token, requestedBlocks, placed };
+    },
+  });
+  assert.equal(finished.status, "failed");
+  assert.equal(released.token, "runner-token");
+  assert.equal(released.placed, 0);
+  cleanup();
+});
+
+test("request bodies are rejected while they are still being read", async () => {
+  const { EventEmitter } = await import("node:events");
+  const incoming = new EventEmitter();
+  incoming.headers = { "content-length": "40000" };
+  incoming.url = "/api/mobile/builds/preview";
+  incoming.destroy = () => incoming.emit("end");
+  await assert.rejects(() => readIncoming(incoming), HttpError);
 });

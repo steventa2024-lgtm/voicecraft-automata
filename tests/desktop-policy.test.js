@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { externalUrl, mergeSettings, scrubChildEnv, senderAllowed, validateInvoke } from "../desktop/electron/policy.js";
 
 test("IPC rejects unknown channels and forged approval shortcuts", () => {
@@ -65,7 +66,7 @@ test("desktop sources do not point the product at a Lovable preview", async () =
       else if (/\.(js|cjs|html|tsx|ts|css)$/.test(entry)) files.push(full);
     }
   };
-  walk(new URL("../desktop", import.meta.url).pathname);
+  walk(fileURLToPath(new URL("../desktop", import.meta.url)));
   const combined = files.map((file) => readFileSync(file, "utf8")).join("\n");
   assert.equal(combined.includes("lovable.app"), false);
   assert.equal(combined.includes("id-preview--"), false);
