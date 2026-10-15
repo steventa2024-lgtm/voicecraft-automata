@@ -44,15 +44,35 @@ function readList(key: string) {
   }
 }
 
-function Thumb({ id, scale = 2 }: { id: string; scale?: number }) {
-  const preview = useMemo(() => isometricPreview(generateTemplate(id).blocks, 72, 52), [id]);
+function faceStyle(face: { points: Array<{ x: number; y: number }>; color: string }, scale = 1) {
+  const xs = face.points.map((point) => point.x);
+  const ys = face.points.map((point) => point.y);
+  const left = Math.min(...xs) * scale;
+  const top = Math.min(...ys) * scale;
+  return {
+    position: "absolute" as const,
+    left,
+    top,
+    width: Math.max(3, (Math.max(...xs) - Math.min(...xs)) * scale),
+    height: Math.max(3, (Math.max(...ys) - Math.min(...ys)) * scale),
+    backgroundColor: face.color,
+  };
+}
+
+function PlanView({ blocks, width, height, scale = 1 }: { blocks: Array<{ x: number; y: number; z: number; block: string }>; width: number; height: number; scale?: number }) {
+  const preview = useMemo(() => isometricPreview(blocks, width, height), [blocks, width, height]);
   return (
-    <View style={{ width: preview.width * scale, height: preview.height * scale, backgroundColor: "#07111f", borderRadius: 12, overflow: "hidden" }}>
-      {preview.cells.map((cell: { x: number; y: number; color: string }) => (
-        <View key={`${cell.x}-${cell.y}`} style={{ position: "absolute", left: cell.x * scale, top: cell.y * scale, width: scale + 1, height: scale + 1, backgroundColor: cell.color }} />
+    <View style={{ width: preview.width * scale, height: preview.height * scale, backgroundColor: "#10233f", borderRadius: 16, overflow: "hidden", alignSelf: "center" }}>
+      {preview.faces.map((face: { points: Array<{ x: number; y: number }>; color: string }, index: number) => (
+        <View key={index} style={faceStyle(face, scale)} />
       ))}
     </View>
   );
+}
+
+function Thumb({ id }: { id: string }) {
+  const blocks = useMemo(() => generateTemplate(id).blocks, [id]);
+  return <PlanView blocks={blocks} width={180} height={120} />;
 }
 
 export function CatalogScreen() {
@@ -120,7 +140,6 @@ function Editor({ template, favorite, onFavorite, onBack }: { template: Template
   const [note, setNote] = useState("");
   const options = history[cursor];
   const plan = useMemo(() => generateTemplate(template.id, options), [template.id, options]);
-  const preview = useMemo(() => isometricPreview(plan.blocks, 120, 90), [plan]);
 
   function apply(next: Options) {
     const stack = history.slice(0, cursor + 1).concat(next);
@@ -152,11 +171,7 @@ function Editor({ template, favorite, onFavorite, onBack }: { template: Template
       <Text style={styles.kicker}>{template.category.toUpperCase()}</Text>
       <Text style={styles.title}>{template.name}</Text>
       <Note>{template.description}</Note>
-      <View style={{ width: preview.width * 2, height: preview.height * 2, alignSelf: "center", backgroundColor: "#07111f", borderRadius: 16 }}>
-        {preview.cells.map((cell: { x: number; y: number; color: string }) => (
-          <View key={`${cell.x}-${cell.y}`} style={{ position: "absolute", left: cell.x * 2, top: cell.y * 2, width: 3, height: 3, backgroundColor: cell.color }} />
-        ))}
-      </View>
+      <PlanView blocks={plan.blocks} width={320} height={220} />
       <Note>{plan.count} operations · {plan.blocks.filter((block: { block: string }) => block.block === "air").length} removals · {plan.bounds.width}×{plan.bounds.height}×{plan.bounds.depth} · {plan.fingerprint}</Note>
       <Note>Minecraft {template.minecraft}. {template.permissions}</Note>
       {(Array.isArray(plan.warnings) ? plan.warnings : []).map((warning: string) => <Note key={warning}>{warning}</Note>)}

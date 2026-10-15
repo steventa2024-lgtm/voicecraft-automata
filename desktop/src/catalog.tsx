@@ -27,11 +27,11 @@ function readIds(key: string) {
 }
 
 function Thumb({ id }: { id: string }) {
-  const cells = useMemo(() => isometricPreview(generateTemplate(id).blocks, 88, 64).cells, [id]);
+  const preview = useMemo(() => isometricPreview(generateTemplate(id).blocks, 280, 180), [id]);
   return (
-    <svg viewBox="0 0 88 64" className="h-28 w-full rounded-xl bg-[#07111f]" role="img" aria-label="Structure thumbnail">
-      {cells.map((cell) => (
-        <rect key={`${cell.x}-${cell.y}`} x={cell.x} y={cell.y} width="2.2" height="2.2" fill={cell.color} />
+    <svg viewBox={`0 0 ${preview.width} ${preview.height}`} className="h-36 w-full rounded-xl bg-[#10233f]" role="img" aria-label="Structure preview from the block plan">
+      {preview.faces.map((face, index) => (
+        <polygon key={index} points={face.points.map((point) => `${point.x},${point.y}`).join(" ")} fill={face.color} />
       ))}
     </svg>
   );

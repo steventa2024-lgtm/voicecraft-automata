@@ -769,34 +769,68 @@ const BLOCK_COLORS = {
   chain: "#8d9196",
 };
 
-export function isometricPreview(blocks, width = 96, height = 72) {
+function shade(hex, factor) {
+  const value = hex.replace("#", "");
+  const channels = [0, 2, 4].map((index) => Math.max(0, Math.min(255, Math.round(parseInt(value.slice(index, index + 2), 16) * factor))));
+  return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function projectVoxel(x, y, z) {
+  return { x: (x - z) * 12, y: (x + z) * 6 - y * 12 };
+}
+
+export function isometricPreview(blocks, width = 280, height = 200) {
   const solid = blocks.filter((block) => block.block !== "air");
-  if (solid.length === 0) return { width, height, cells: [] };
+  if (solid.length === 0) return { width, height, cells: [], faces: [] };
+  const occupied = new Set(solid.map((block) => `${block.x}|${block.y}|${block.z}`));
   const bounds = boundsOf(solid);
-  const projected = solid.map((block) => {
+  const faces = [];
+  for (const block of solid) {
     const x = block.x - bounds.min.x;
     const y = block.y - bounds.min.y;
     const z = block.z - bounds.min.z;
-    return {
-      sx: (x - z) * 3,
-      sy: (x + z) * 2 - y * 3,
-      color: BLOCK_COLORS[block.block] || "#8ea0b8",
-      depth: x + z + y,
-    };
-  });
-  const minX = Math.min(...projected.map((cell) => cell.sx));
-  const maxX = Math.max(...projected.map((cell) => cell.sx));
-  const minY = Math.min(...projected.map((cell) => cell.sy));
-  const maxY = Math.max(...projected.map((cell) => cell.sy));
-  const scaleX = (width - 4) / Math.max(1, maxX - minX);
-  const scaleY = (height - 4) / Math.max(1, maxY - minY);
-  const buckets = new Map();
-  for (const cell of projected) {
-    const px = Math.round(2 + (cell.sx - minX) * scaleX);
-    const py = Math.round(height - 2 - (cell.sy - minY) * scaleY);
-    const key = `${px}|${py}`;
-    const previous = buckets.get(key);
-    if (!previous || cell.depth >= previous.depth) buckets.set(key, { x: px, y: py, color: cell.color, depth: cell.depth });
+    const color = BLOCK_COLORS[block.block] || "#8ea0b8";
+    const worldX = block.x;
+    const worldY = block.y;
+    const worldZ = block.z;
+    const top = projectVoxel(x, y + 1, z);
+    const topX = projectVoxel(x + 1, y + 1, z);
+    const topXZ = projectVoxel(x + 1, y + 1, z + 1);
+    const topZ = projectVoxel(x, y + 1, z + 1);
+    const base = projectVoxel(x, y, z);
+    const baseX = projectVoxel(x + 1, y, z);
+    const baseZ = projectVoxel(x, y, z + 1);
+    const baseXZ = projectVoxel(x + 1, y, z + 1);
+    if (!occupied.has(`${worldX}|${worldY + 1}|${worldZ}`)) {
+      faces.push({ points: [top, topX, topXZ, topZ], color: shade(color, 1.18), depth: x + z + y + 2 });
+    }
+    if (!occupied.has(`${worldX}|${worldY}|${worldZ + 1}`)) {
+      faces.push({ points: [topZ, topXZ, baseXZ, baseZ], color: shade(color, 0.62), depth: x + z + y + 1 });
+    }
+    if (!occupied.has(`${worldX + 1}|${worldY}|${worldZ}`)) {
+      faces.push({ points: [topX, topXZ, baseXZ, baseX], color: shade(color, 0.82), depth: x + z + y });
+    }
   }
-  return { width, height, cells: [...buckets.values()] };
+  const xs = faces.flatMap((face) => face.points.map((point) => point.x));
+  const ys = faces.flatMap((face) => face.points.map((point) => point.y));
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const scale = Math.min((width - 16) / Math.max(1, maxX - minX), (height - 16) / Math.max(1, maxY - minY));
+  const drawn = faces
+    .map((face) => ({
+      ...face,
+      points: face.points.map((point) => ({
+        x: 8 + (point.x - minX) * scale,
+        y: height - 8 - (point.y - minY) * scale,
+      })),
+    }))
+    .sort((left, right) => left.depth - right.depth);
+  const cells = drawn.map((face) => {
+    const cx = face.points.reduce((sum, point) => sum + point.x, 0) / face.points.length;
+    const cy = face.points.reduce((sum, point) => sum + point.y, 0) / face.points.length;
+    return { x: Math.round(cx), y: Math.round(cy), color: face.color, depth: face.depth };
+  });
+  return { width, height, cells, faces: drawn };
 }

@@ -41,5 +41,10 @@ export function generateTemplate(id: string, options?: object): GeneratedPlan {
 }
 
 export function isometricPreview(blocks: unknown[], width?: number, height?: number) {
-  return previewShared(blocks, width, height) as { width: number; height: number; cells: Array<{ x: number; y: number; color: string }> };
+  return previewShared(blocks, width, height) as {
+    width: number;
+    height: number;
+    cells: Array<{ x: number; y: number; color: string }>;
+    faces: Array<{ points: Array<{ x: number; y: number }>; color: string }>;
+  };
 }
