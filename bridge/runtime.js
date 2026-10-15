@@ -1,3 +1,4 @@
+import { worldPlanBounds } from "../packages/protocol/src/coordinates.js";
 import { randomUUID } from "node:crypto";
 import {
   assessPayload,
@@ -37,37 +38,57 @@ export function createBridgeRuntime(options) {
     if (state === "idle" || state === "completed" || state === "failed" || state === "cancelled") {
       setState("planning");
     }
-    const plan = buildPlan(instruction.action === "clear" ? instruction : { ...instruction, action: instruction.action === "preview" || instruction.action === "inspect" ? "build" : instruction.action, valid: instruction.structure !== "unknown" });
+    const plan = buildPlan(
+      instruction.action === "clear"
+        ? instruction
+        : {
+            ...instruction,
+            action:
+              instruction.action === "preview" || instruction.action === "inspect"
+                ? "build"
+                : instruction.action,
+            valid: instruction.structure !== "unknown",
+          },
+    );
     const player = options.getPlayer?.() || { x: 0, y: 64, z: 0, yaw: 0 };
     const origin = placementOrigin({
       player,
       yaw: player.yaw || 0,
-      instruction: instruction.action === "clear" ? instruction : { ...instruction, action: "build" },
+      instruction:
+        instruction.action === "clear" ? instruction : { ...instruction, action: "build" },
     });
-    const boundsError = worldBoundsError(origin.y, plan.bounds.height);
+    const boundsError = worldBoundsError(origin.y + plan.bounds.min.y, plan.bounds.height);
+    const worldBox = worldPlanBounds(origin, plan, instruction);
     const site = options.sampleBlock
       ? surveyTerrain({
-          origin,
-          width: origin.footprint.width,
-          depth: origin.footprint.depth,
+          origin: worldBox.min,
+          width: worldBox.width,
+          depth: worldBox.depth,
           height: plan.bounds.height,
           sampler: options.sampleBlock,
           protectedExtra: options.protectedBlocks || [],
         })
       : null;
     const id = jobId || randomUUID();
-    pending.set(id, { instruction, plan, origin, site, createdAt: Date.now() });
+    pending.set(id, { instruction, plan, origin, site, boundsError, createdAt: Date.now() });
     if (state === "planning") setState("awaiting_approval");
     emit({
       type: "plan",
       jobId: id,
       instruction,
       count: plan.count,
+      fingerprint: plan.fingerprint,
+      templateId: plan.templateId || null,
       bounds: plan.bounds,
       materials: plan.materials,
       origin: { x: origin.x, y: origin.y, z: origin.z },
       site,
-      warnings: [...(instruction.warnings || []), ...(site?.warnings || []), ...(boundsError ? [boundsError] : [])],
+      warnings: [
+        ...(instruction.warnings || []),
+        ...(plan.warnings || []),
+        ...(site?.warnings || []),
+        ...(boundsError ? [boundsError] : []),
+      ],
       executable: !boundsError && instruction.valid,
     });
     return { jobId: id, plan, origin, site, boundsError };
@@ -79,14 +100,30 @@ export function createBridgeRuntime(options) {
       emit({ type: "error", message: "There is no pending build to approve." });
       return { ok: false };
     }
-    if (job.boundsError || worldBoundsError(job.origin.y, job.plan.bounds.height)) {
+    const rebuilt = buildPlan(
+      job.instruction.action === "clear"
+        ? job.instruction
+        : { ...job.instruction, action: "build", valid: true },
+    );
+    if (rebuilt.fingerprint !== job.plan.fingerprint || rebuilt.count !== job.plan.count) {
+      emit({
+        type: "error",
+        message: "The approved plan no longer matches the preview. Generate it again.",
+      });
+      return { ok: false };
+    }
+    if (
+      job.boundsError ||
+      worldBoundsError(job.origin.y + job.plan.bounds.min.y, job.plan.bounds.height)
+    ) {
       emit({ type: "error", message: "The plan does not fit inside the world height." });
       return { ok: false };
     }
     if (job.site?.protectedCount > 0 && job.instruction.protectedBlockPolicy !== "skip") {
       emit({
         type: "error",
-        message: "Protected blocks are inside the footprint. Change the site or explicitly choose skip policy.",
+        message:
+          "Protected blocks are inside the footprint. Change the site or explicitly choose skip policy.",
       });
       return { ok: false };
     }
@@ -99,7 +136,9 @@ export function createBridgeRuntime(options) {
     if (!decision?.allowed) {
       emit({
         type: "error",
-        message: decision?.message || "Build authorization was refused. Sign in and check the subscription allowance.",
+        message:
+          decision?.message ||
+          "Build authorization was refused. Sign in and check the subscription allowance.",
       });
       return { ok: false };
     }
@@ -113,7 +152,11 @@ export function createBridgeRuntime(options) {
     emit({ type: "status", status: "building", jobId, message: "Build started", progress: 0 });
     try {
       const result = await options.place({
-        instruction: { ...job.instruction, approved: true, action: job.instruction.action === "preview" ? "build" : job.instruction.action },
+        instruction: {
+          ...job.instruction,
+          approved: true,
+          action: job.instruction.action === "preview" ? "build" : job.instruction.action,
+        },
         plan: job.plan,
         origin: job.origin,
         job: controller,
@@ -123,23 +166,33 @@ export function createBridgeRuntime(options) {
         },
       });
       controller.done = true;
-      const finalState = controller.cancelled ? "cancelled" : result.status === "failed" ? "failed" : "completed";
+      const finalState = controller.cancelled
+        ? "cancelled"
+        : result.status === "failed"
+          ? "failed"
+          : "completed";
       if (controller.cancelled) setState("cancelling");
-      setState(finalState === "cancelled" ? "cancelled" : finalState === "failed" ? "failed" : "completed");
-      if ((result.placed || 0) === 0) await options.release?.({ requestedBlocks: job.plan.count, runnerToken, jobId });
+      setState(
+        finalState === "cancelled" ? "cancelled" : finalState === "failed" ? "failed" : "completed",
+      );
+      if ((result.placed || 0) === 0)
+        await options.release?.({ requestedBlocks: job.plan.count, runnerToken, jobId });
       pending.delete(jobId);
       emit({
         type: "status",
         status: controller.cancelled ? "cancelled" : result.status,
         jobId,
-        message: controller.cancelled ? "Build cancelled" : `Build ${result.status.replaceAll("_", " ")}`,
+        message: controller.cancelled
+          ? "Build cancelled"
+          : `Build ${result.status.replaceAll("_", " ")}`,
         result,
       });
       return { ok: !controller.cancelled && result.failed === 0, result };
     } catch (error) {
       controller.done = true;
       if (state === "building" || state === "paused" || state === "cancelling") setState("failed");
-      if ((controller.placed || 0) === 0) await options.release?.({ requestedBlocks: job.plan.count, runnerToken, jobId });
+      if ((controller.placed || 0) === 0)
+        await options.release?.({ requestedBlocks: job.plan.count, runnerToken, jobId });
       emit({ type: "error", message: error.message || "Build failed." });
       return { ok: false };
     }
@@ -162,7 +215,9 @@ export function createBridgeRuntime(options) {
       if (origin) {
         try {
           const url = new URL(origin);
-          const local = url.protocol === "file:" || (url.protocol === "http:" && isLoopbackAddress(url.hostname));
+          const local =
+            url.protocol === "file:" ||
+            (url.protocol === "http:" && isLoopbackAddress(url.hostname));
           if (!local) return { ok: false, reason: "Origin is not allowed." };
         } catch {
           return { ok: false, reason: "Origin is not allowed." };
@@ -181,7 +236,11 @@ export function createBridgeRuntime(options) {
           return { ok: false, close: true, code: "unauthorized" };
         }
         client.authenticated = true;
-        emit({ type: "status", status: options.botReady ? "connected" : "idle", message: "Desktop client authorized." });
+        emit({
+          type: "status",
+          status: options.botReady ? "connected" : "idle",
+          message: "Desktop client authorized.",
+        });
         return { ok: true };
       }
       if (payload?.type === "cancel" || payload?.type === "stop") {
@@ -211,7 +270,13 @@ export function createBridgeRuntime(options) {
       }
       if (payload?.type === "undo" || payload?.type === "redo") {
         const decision = decideDispatch(
-          { action: payload.type, valid: true, approved: true, structure: "unknown", requiresConfirmation: true },
+          {
+            action: payload.type,
+            valid: true,
+            approved: true,
+            structure: "unknown",
+            requiresConfirmation: true,
+          },
           { authorized: true },
         );
         return executeDispatch(decision, {
@@ -231,7 +296,11 @@ export function createBridgeRuntime(options) {
       }
       const decision = decideDispatch(instruction.instruction, { authorized: true });
       return executeDispatch(decision, {
-        preview: () => previewInstruction({ ...instruction.instruction, action: "build", valid: true }, payload.jobId),
+        preview: () =>
+          previewInstruction(
+            { ...instruction.instruction, action: "build", valid: true },
+            payload.jobId,
+          ),
         inspect: () => previewInstruction(instruction.instruction, payload.jobId),
         awaiting_approval: () => previewInstruction(instruction.instruction, payload.jobId),
         build: () => ({ ok: false, code: "approval_required" }),
@@ -251,7 +320,10 @@ export function createBridgeRuntime(options) {
           return { ok: true };
         },
         reject: () => {
-          emit({ type: "error", message: instruction.instruction.errors?.[0] || "Command rejected." });
+          emit({
+            type: "error",
+            message: instruction.instruction.errors?.[0] || "Command rejected.",
+          });
           return { ok: false, code: decision.reason };
         },
       });

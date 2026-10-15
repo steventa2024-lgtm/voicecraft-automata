@@ -57,6 +57,13 @@ export function openStore(directory) {
       revoked_at text
     );
   `);
+  for (const [name, type] of [
+    ["template_id", "text"],
+    ["template_options", "text"],
+  ]) {
+    const columns = db.prepare(`pragma table_info(blueprints)`).all();
+    if (!columns.some((column) => column.name === name)) db.exec(`alter table blueprints add column ${name} ${type}`);
+  }
 
   return {
     recordBuild(entry, changes) {
@@ -129,8 +136,8 @@ export function openStore(directory) {
       if (count >= MAX_BLUEPRINTS) throw new Error("Blueprint library is full.");
       const id = blueprint.id || randomUUID();
       db.prepare(
-        `insert into blueprints (id, name, category, structure, material, size, floors, width, depth, height, favorite, notes, created_at)
-         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `insert into blueprints (id, name, category, structure, material, size, floors, width, depth, height, favorite, notes, created_at, template_id, template_options)
+         values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         id,
         blueprint.name,
@@ -145,6 +152,8 @@ export function openStore(directory) {
         blueprint.favorite ? 1 : 0,
         blueprint.notes || "",
         new Date().toISOString(),
+        blueprint.templateId || null,
+        blueprint.templateOptions ? JSON.stringify(blueprint.templateOptions) : null,
       );
       return id;
     },
@@ -164,6 +173,8 @@ export function openStore(directory) {
         dimensions: { width: row.width, depth: row.depth, height: row.height },
         favorite: false,
         notes: row.notes,
+        templateId: row.template_id || undefined,
+        templateOptions: row.template_options ? JSON.parse(row.template_options) : undefined,
       });
     },
     deleteBlueprint(id) {

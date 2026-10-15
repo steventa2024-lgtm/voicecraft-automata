@@ -28,6 +28,8 @@ import {
   surveyTerrain,
   toFillRuns,
   transition,
+  isLocalOllamaModel,
+  isLocalOllamaUrl,
   validatePlannerResponse,
   verifyCommandEnvelope,
   verifyPkce,
@@ -471,6 +473,10 @@ test("ollama plans must match the constrained schema and become normal instructi
     }),
   );
   assert.equal(hostile.ok, false);
+  assert.equal(isLocalOllamaUrl("http://127.0.0.1:11434"), true);
+  assert.equal(isLocalOllamaUrl("https://api.openai.com"), false);
+  assert.equal(isLocalOllamaModel("llama3.2:3b"), true);
+  assert.equal(isLocalOllamaModel("gpt-oss:120b-cloud"), false);
 });
 
 test("local bridge payload limits and approval cannot be self-asserted", async () => {

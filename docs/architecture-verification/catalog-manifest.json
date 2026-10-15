@@ -1,0 +1,1052 @@
+[
+  {
+    "id": "starter-cottage",
+    "operations": 2006,
+    "solid": 1537,
+    "bounds": {
+      "min": {
+        "x": -5,
+        "y": -2,
+        "z": -5
+      },
+      "max": {
+        "x": 14,
+        "y": 13,
+        "z": 13
+      },
+      "width": 20,
+      "height": 16,
+      "depth": 19
+    },
+    "fingerprint": "971a8297"
+  },
+  {
+    "id": "oak-cabin",
+    "operations": 2693,
+    "solid": 2004,
+    "bounds": {
+      "min": {
+        "x": -2,
+        "y": -2,
+        "z": -5
+      },
+      "max": {
+        "x": 21,
+        "y": 14,
+        "z": 15
+      },
+      "width": 24,
+      "height": 17,
+      "depth": 21
+    },
+    "fingerprint": "c743c621"
+  },
+  {
+    "id": "forest-treehouse",
+    "operations": 2856,
+    "solid": 2607,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": -2,
+        "z": 0
+      },
+      "max": {
+        "x": 20,
+        "y": 27,
+        "z": 18
+      },
+      "width": 21,
+      "height": 30,
+      "depth": 19
+    },
+    "fingerprint": "c2d70330"
+  },
+  {
+    "id": "lakeside-cottage",
+    "operations": 2790,
+    "solid": 2234,
+    "bounds": {
+      "min": {
+        "x": -6,
+        "y": -2,
+        "z": -5
+      },
+      "max": {
+        "x": 25,
+        "y": 13,
+        "z": 23
+      },
+      "width": 32,
+      "height": 16,
+      "depth": 29
+    },
+    "fingerprint": "37399946"
+  },
+  {
+    "id": "cliffside-house",
+    "operations": 2912,
+    "solid": 2345,
+    "bounds": {
+      "min": {
+        "x": -6,
+        "y": -2,
+        "z": -3
+      },
+      "max": {
+        "x": 18,
+        "y": 17,
+        "z": 16
+      },
+      "width": 25,
+      "height": 20,
+      "depth": 20
+    },
+    "fingerprint": "ffdd6b79"
+  },
+  {
+    "id": "glass-villa",
+    "operations": 3656,
+    "solid": 2567,
+    "bounds": {
+      "min": {
+        "x": -2,
+        "y": -1,
+        "z": -3
+      },
+      "max": {
+        "x": 24,
+        "y": 10,
+        "z": 21
+      },
+      "width": 27,
+      "height": 12,
+      "depth": 25
+    },
+    "fingerprint": "1216c832"
+  },
+  {
+    "id": "luxury-mansion",
+    "operations": 5213,
+    "solid": 3371,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -4
+      },
+      "max": {
+        "x": 29,
+        "y": 18,
+        "z": 21
+      },
+      "width": 31,
+      "height": 20,
+      "depth": 26
+    },
+    "fingerprint": "c17434a2"
+  },
+  {
+    "id": "suburban-house",
+    "operations": 3236,
+    "solid": 2479,
+    "bounds": {
+      "min": {
+        "x": -3,
+        "y": -2,
+        "z": -4
+      },
+      "max": {
+        "x": 24,
+        "y": 12,
+        "z": 19
+      },
+      "width": 28,
+      "height": 15,
+      "depth": 24
+    },
+    "fingerprint": "ca025485"
+  },
+  {
+    "id": "duplex",
+    "operations": 3981,
+    "solid": 2557,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -2
+      },
+      "max": {
+        "x": 25,
+        "y": 10,
+        "z": 13
+      },
+      "width": 27,
+      "height": 12,
+      "depth": 16
+    },
+    "fingerprint": "6a6c87a5"
+  },
+  {
+    "id": "penthouse-tower",
+    "operations": 6595,
+    "solid": 4108,
+    "bounds": {
+      "min": {
+        "x": -2,
+        "y": -1,
+        "z": -3
+      },
+      "max": {
+        "x": 18,
+        "y": 21,
+        "z": 17
+      },
+      "width": 21,
+      "height": 23,
+      "depth": 21
+    },
+    "fingerprint": "5068cc81"
+  },
+  {
+    "id": "stone-keep",
+    "operations": 5780,
+    "solid": 4587,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -3
+      },
+      "max": {
+        "x": 25,
+        "y": 19,
+        "z": 25
+      },
+      "width": 27,
+      "height": 21,
+      "depth": 29
+    },
+    "fingerprint": "7cc23b46"
+  },
+  {
+    "id": "royal-castle",
+    "operations": 11463,
+    "solid": 8511,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 35,
+        "y": 28,
+        "z": 33
+      },
+      "width": 37,
+      "height": 30,
+      "depth": 35
+    },
+    "fingerprint": "470240c8"
+  },
+  {
+    "id": "gatehouse",
+    "operations": 2855,
+    "solid": 2123,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -3
+      },
+      "max": {
+        "x": 23,
+        "y": 19,
+        "z": 13
+      },
+      "width": 25,
+      "height": 21,
+      "depth": 17
+    },
+    "fingerprint": "72d40ac5"
+  },
+  {
+    "id": "defensive-wall",
+    "operations": 1985,
+    "solid": 1740,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 29,
+        "y": 12,
+        "z": 7
+      },
+      "width": 31,
+      "height": 14,
+      "depth": 9
+    },
+    "fingerprint": "50798276"
+  },
+  {
+    "id": "citadel",
+    "operations": 10285,
+    "solid": 8738,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -2
+      },
+      "max": {
+        "x": 37,
+        "y": 30,
+        "z": 35
+      },
+      "width": 39,
+      "height": 32,
+      "depth": 38
+    },
+    "fingerprint": "4d47640c"
+  },
+  {
+    "id": "wizard-tower",
+    "operations": 2899,
+    "solid": 2028,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 17,
+        "y": 30,
+        "z": 17
+      },
+      "width": 19,
+      "height": 32,
+      "depth": 19
+    },
+    "fingerprint": "ac645086"
+  },
+  {
+    "id": "enchanted-library",
+    "operations": 4564,
+    "solid": 3214,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 22,
+        "y": 21,
+        "z": 16
+      },
+      "width": 24,
+      "height": 23,
+      "depth": 18
+    },
+    "fingerprint": "538ad907"
+  },
+  {
+    "id": "dragon-shrine",
+    "operations": 1970,
+    "solid": 1934,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 25,
+        "y": 19,
+        "z": 23
+      },
+      "width": 27,
+      "height": 21,
+      "depth": 25
+    },
+    "fingerprint": "9e38ac8c"
+  },
+  {
+    "id": "floating-island",
+    "operations": 2209,
+    "solid": 2209,
+    "bounds": {
+      "min": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "max": {
+        "x": 23,
+        "y": 24,
+        "z": 24
+      },
+      "width": 23,
+      "height": 25,
+      "depth": 25
+    },
+    "fingerprint": "99a3a5b5"
+  },
+  {
+    "id": "elven-sanctuary",
+    "operations": 2303,
+    "solid": 2303,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -2,
+        "z": -1
+      },
+      "max": {
+        "x": 23,
+        "y": 14,
+        "z": 23
+      },
+      "width": 25,
+      "height": 17,
+      "depth": 25
+    },
+    "fingerprint": "22d4fc2a"
+  },
+  {
+    "id": "blacksmith",
+    "operations": 1545,
+    "solid": 1056,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 17,
+        "y": 13,
+        "z": 13
+      },
+      "width": 19,
+      "height": 15,
+      "depth": 15
+    },
+    "fingerprint": "ef951fc7"
+  },
+  {
+    "id": "market-hall",
+    "operations": 1556,
+    "solid": 1556,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 27,
+        "y": 13,
+        "z": 13
+      },
+      "width": 29,
+      "height": 15,
+      "depth": 15
+    },
+    "fingerprint": "a4118166"
+  },
+  {
+    "id": "bakery",
+    "operations": 1097,
+    "solid": 779,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -2
+      },
+      "max": {
+        "x": 14,
+        "y": 10,
+        "z": 12
+      },
+      "width": 16,
+      "height": 12,
+      "depth": 15
+    },
+    "fingerprint": "cce1e7cb"
+  },
+  {
+    "id": "inn",
+    "operations": 4686,
+    "solid": 2931,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -3
+      },
+      "max": {
+        "x": 23,
+        "y": 21,
+        "z": 15
+      },
+      "width": 25,
+      "height": 23,
+      "depth": 19
+    },
+    "fingerprint": "13fecf0e"
+  },
+  {
+    "id": "town-hall",
+    "operations": 3561,
+    "solid": 2443,
+    "bounds": {
+      "min": {
+        "x": 1,
+        "y": -1,
+        "z": -2
+      },
+      "max": {
+        "x": 23,
+        "y": 25,
+        "z": 18
+      },
+      "width": 23,
+      "height": 27,
+      "depth": 21
+    },
+    "fingerprint": "2e0002fc"
+  },
+  {
+    "id": "crop-farm",
+    "operations": 1318,
+    "solid": 1280,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": -1,
+        "z": 0
+      },
+      "max": {
+        "x": 22,
+        "y": 10,
+        "z": 18
+      },
+      "width": 23,
+      "height": 12,
+      "depth": 19
+    },
+    "fingerprint": "a0c171c0"
+  },
+  {
+    "id": "barn",
+    "operations": 2070,
+    "solid": 1439,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 20,
+        "y": 13,
+        "z": 15
+      },
+      "width": 22,
+      "height": 15,
+      "depth": 17
+    },
+    "fingerprint": "8a1768f6"
+  },
+  {
+    "id": "greenhouse",
+    "operations": 2281,
+    "solid": 1348,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 21,
+        "y": 10,
+        "z": 15
+      },
+      "width": 23,
+      "height": 12,
+      "depth": 17
+    },
+    "fingerprint": "72d9a9c5"
+  },
+  {
+    "id": "windmill",
+    "operations": 2264,
+    "solid": 1873,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -2,
+        "z": 0
+      },
+      "max": {
+        "x": 20,
+        "y": 19,
+        "z": 21
+      },
+      "width": 22,
+      "height": 22,
+      "depth": 22
+    },
+    "fingerprint": "cbfc7782"
+  },
+  {
+    "id": "botanical-garden",
+    "operations": 1882,
+    "solid": 1882,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": -2,
+        "z": 0
+      },
+      "max": {
+        "x": 24,
+        "y": 11,
+        "z": 24
+      },
+      "width": 25,
+      "height": 14,
+      "depth": 25
+    },
+    "fingerprint": "8dbdc7d5"
+  },
+  {
+    "id": "stone-arch-bridge",
+    "operations": 1012,
+    "solid": 1012,
+    "bounds": {
+      "min": {
+        "x": -6,
+        "y": 0,
+        "z": 0
+      },
+      "max": {
+        "x": 34,
+        "y": 8,
+        "z": 6
+      },
+      "width": 41,
+      "height": 9,
+      "depth": 7
+    },
+    "fingerprint": "c7ffa0c0"
+  },
+  {
+    "id": "suspension-bridge",
+    "operations": 588,
+    "solid": 534,
+    "bounds": {
+      "min": {
+        "x": -6,
+        "y": 0,
+        "z": -1
+      },
+      "max": {
+        "x": 30,
+        "y": 13,
+        "z": 5
+      },
+      "width": 37,
+      "height": 14,
+      "depth": 7
+    },
+    "fingerprint": "ce612f66"
+  },
+  {
+    "id": "mine-entrance",
+    "operations": 1801,
+    "solid": 1545,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": 0,
+        "z": -4
+      },
+      "max": {
+        "x": 18,
+        "y": 10,
+        "z": 12
+      },
+      "width": 19,
+      "height": 11,
+      "depth": 17
+    },
+    "fingerprint": "7304a45d"
+  },
+  {
+    "id": "mountain-watchtower",
+    "operations": 1689,
+    "solid": 1363,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 13,
+        "y": 26,
+        "z": 13
+      },
+      "width": 15,
+      "height": 28,
+      "depth": 15
+    },
+    "fingerprint": "61d5b0ab"
+  },
+  {
+    "id": "lighthouse",
+    "operations": 2310,
+    "solid": 1737,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 15,
+        "y": 30,
+        "z": 15
+      },
+      "width": 17,
+      "height": 32,
+      "depth": 17
+    },
+    "fingerprint": "27862fa7"
+  },
+  {
+    "id": "desert-pyramid",
+    "operations": 3764,
+    "solid": 2055,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": -1,
+        "z": 0
+      },
+      "max": {
+        "x": 26,
+        "y": 12,
+        "z": 26
+      },
+      "width": 27,
+      "height": 14,
+      "depth": 27
+    },
+    "fingerprint": "0eb27fee"
+  },
+  {
+    "id": "greek-temple",
+    "operations": 2792,
+    "solid": 2729,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -3
+      },
+      "max": {
+        "x": 23,
+        "y": 20,
+        "z": 17
+      },
+      "width": 25,
+      "height": 22,
+      "depth": 21
+    },
+    "fingerprint": "04f5885c"
+  },
+  {
+    "id": "ancient-ruins",
+    "operations": 1718,
+    "solid": 1718,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": -2,
+        "z": 0
+      },
+      "max": {
+        "x": 23,
+        "y": 12,
+        "z": 21
+      },
+      "width": 24,
+      "height": 15,
+      "depth": 22
+    },
+    "fingerprint": "cb1faa41"
+  },
+  {
+    "id": "mountain-shrine",
+    "operations": 3495,
+    "solid": 3382,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": -1,
+        "z": 0
+      },
+      "max": {
+        "x": 19,
+        "y": 19,
+        "z": 22
+      },
+      "width": 20,
+      "height": 21,
+      "depth": 23
+    },
+    "fingerprint": "807cb4a5"
+  },
+  {
+    "id": "memorial-plaza",
+    "operations": 1469,
+    "solid": 1469,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 23,
+        "y": 15,
+        "z": 23
+      },
+      "width": 25,
+      "height": 17,
+      "depth": 25
+    },
+    "fingerprint": "0a26f9bb"
+  },
+  {
+    "id": "warehouse",
+    "operations": 5663,
+    "solid": 2828,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -3
+      },
+      "max": {
+        "x": 27,
+        "y": 21,
+        "z": 19
+      },
+      "width": 29,
+      "height": 23,
+      "depth": 23
+    },
+    "fingerprint": "affb2b7a"
+  },
+  {
+    "id": "workshop",
+    "operations": 2889,
+    "solid": 1712,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 21,
+        "y": 16,
+        "z": 15
+      },
+      "width": 23,
+      "height": 18,
+      "depth": 17
+    },
+    "fingerprint": "2cad5f7f"
+  },
+  {
+    "id": "sawmill",
+    "operations": 1188,
+    "solid": 1188,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 23,
+        "y": 15,
+        "z": 17
+      },
+      "width": 25,
+      "height": 17,
+      "depth": 19
+    },
+    "fingerprint": "76bc0136"
+  },
+  {
+    "id": "railway-depot",
+    "operations": 1213,
+    "solid": 1168,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 29,
+        "y": 9,
+        "z": 11
+      },
+      "width": 31,
+      "height": 11,
+      "depth": 13
+    },
+    "fingerprint": "00571c29"
+  },
+  {
+    "id": "silos",
+    "operations": 2889,
+    "solid": 2535,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 29,
+        "y": 21,
+        "z": 15
+      },
+      "width": 31,
+      "height": 23,
+      "depth": 17
+    },
+    "fingerprint": "f244b496"
+  },
+  {
+    "id": "pvp-arena",
+    "operations": 2928,
+    "solid": 2886,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 29,
+        "y": 6,
+        "z": 25
+      },
+      "width": 31,
+      "height": 8,
+      "depth": 27
+    },
+    "fingerprint": "99080193"
+  },
+  {
+    "id": "stadium",
+    "operations": 2936,
+    "solid": 2936,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 35,
+        "y": 12,
+        "z": 29
+      },
+      "width": 37,
+      "height": 14,
+      "depth": 31
+    },
+    "fingerprint": "23721bf3"
+  },
+  {
+    "id": "hedge-maze",
+    "operations": 2665,
+    "solid": 2665,
+    "bounds": {
+      "min": {
+        "x": 0,
+        "y": -2,
+        "z": 0
+      },
+      "max": {
+        "x": 26,
+        "y": 9,
+        "z": 24
+      },
+      "width": 27,
+      "height": 12,
+      "depth": 25
+    },
+    "fingerprint": "f33ca836"
+  },
+  {
+    "id": "zen-garden",
+    "operations": 1415,
+    "solid": 1415,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 23,
+        "y": 10,
+        "z": 21
+      },
+      "width": 25,
+      "height": 12,
+      "depth": 23
+    },
+    "fingerprint": "47d8593e"
+  },
+  {
+    "id": "fountain-plaza",
+    "operations": 2034,
+    "solid": 2034,
+    "bounds": {
+      "min": {
+        "x": -1,
+        "y": -1,
+        "z": -1
+      },
+      "max": {
+        "x": 27,
+        "y": 8,
+        "z": 27
+      },
+      "width": 29,
+      "height": 10,
+      "depth": 29
+    },
+    "fingerprint": "30aedde2"
+  }
+]

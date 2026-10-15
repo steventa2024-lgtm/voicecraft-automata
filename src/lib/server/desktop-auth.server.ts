@@ -33,7 +33,7 @@ export async function issueDesktopCode(
 ) {
   const code = randomBytes(32).toString("base64url");
   const db = supabaseAdmin as any;
-  const { error } = await db.from("desktop_auth_codes").insert({
+  const { error } = await db.from("voicecraft_desktop_auth_codes").insert({
     code_hash: sha256(code),
     user_id: userId,
     code_challenge: input.codeChallenge,
@@ -56,7 +56,7 @@ export async function exchangeDesktopCode(input: { code?: unknown; verifier?: un
   }
   const db = supabaseAdmin as any;
   const { data, error } = await db
-    .from("desktop_auth_codes")
+    .from("voicecraft_desktop_auth_codes")
     .select("code_hash,user_id,code_challenge,state_hash,expires_at,used_at")
     .eq("code_hash", sha256(code))
     .maybeSingle();
@@ -68,7 +68,7 @@ export async function exchangeDesktopCode(input: { code?: unknown; verifier?: un
     throw new ApiError(401, "invalid_pkce", "Desktop sign-in verification failed.");
   }
   const marked = await db
-    .from("desktop_auth_codes")
+    .from("voicecraft_desktop_auth_codes")
     .update({ used_at: new Date().toISOString() })
     .eq("code_hash", data.code_hash)
     .is("used_at", null);

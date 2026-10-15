@@ -101,3 +101,9 @@ export function isLocalOllamaUrl(value) {
     return false;
   }
 }
+
+export function isLocalOllamaModel(value) {
+  const model = String(value || "").trim().toLowerCase();
+  if (!model || model.length > 80) return false;
+  return !model.endsWith("-cloud") && !model.includes(":cloud") && !model.includes("-cloud");
+}

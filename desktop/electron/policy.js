@@ -27,6 +27,11 @@ const CHANNELS = new Set([
   "devices.approve",
   "devices.revoke",
   "devices.list",
+  "companion.status",
+  "companion.arm",
+  "companion.permissions",
+  "companion.revoke",
+  "companion.stop",
   "shell.open",
   "app.info",
 ]);
@@ -40,6 +45,7 @@ const SETTING_KEYS = new Set([
   "minecraftUsername",
   "minecraftVersion",
   "minecraftAuth",
+  "placementMode",
   "bridgePort",
   "ollamaUrl",
   "ollamaModel",
@@ -67,13 +73,27 @@ export function validateInvoke(channel, payload = {}) {
   const input = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
   if (channel === "bridge.command") {
     const text = String(input.text || "");
+    const templateId = input.instruction?.templateId;
+    if (templateId) {
+      if (!/^[a-z0-9-]{3,80}$/.test(String(templateId))) return { ok: false, error: "Choose a structure template." };
+      return { ok: true, channel, payload: { text: text.trim().slice(0, 500), instruction: input.instruction } };
+    }
     if (!text.trim() || text.length > 500) return { ok: false, error: "Enter a command under 500 characters." };
     return { ok: true, channel, payload: { text: text.trim(), instruction: input.instruction || null } };
+  }
+  if (channel === "companion.permissions") {
+    return { ok: true, channel, payload: { build: input.build === true, view: false, input: false } };
+  }
+  if (channel === "companion.revoke") {
+    return { ok: true, channel, payload: { deviceId: String(input.deviceId || "").slice(0, 80) } };
   }
   if (channel === "bridge.approve" || channel === "history.undo" || channel === "history.redo") {
     return { ok: true, channel, payload: { jobId: String(input.jobId || "") } };
   }
   if (channel === "bridge.start") {
+    if (input.placementMode !== undefined && !["auto", "command", "creative"].includes(input.placementMode)) {
+      return { ok: false, error: "Choose a supported placement mode." };
+    }
     const port = Number(input.port);
     const bridgePort = Number(input.bridgePort || 8765);
     if (!Number.isInteger(port) || port < 1 || port > 65535) return { ok: false, error: "Minecraft port is invalid." };
@@ -94,10 +114,14 @@ export function validateInvoke(channel, payload = {}) {
         username,
         version: String(input.version || "").slice(0, 16),
         auth: input.auth === "microsoft" ? "microsoft" : "offline",
+        placementMode: input.placementMode || "auto",
       },
     };
   }
   if (channel === "settings.set") {
+    if (input.placementMode !== undefined && !["auto", "command", "creative"].includes(input.placementMode)) {
+      return { ok: false, error: "Choose a supported placement mode." };
+    }
     const next = {};
     for (const [key, value] of Object.entries(input)) {
       if (!SETTING_KEYS.has(key)) return { ok: false, error: "Unknown setting." };

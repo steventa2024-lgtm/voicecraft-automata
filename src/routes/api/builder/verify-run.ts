@@ -11,7 +11,7 @@ export const Route = createFileRoute("/api/builder/verify-run")({
       const userId = tokenPayload ? tokenPayload.sub : (await requireApiUser(request)).id;
       if (tokenPayload) {
         const db = supabaseAdmin as any;
-        const consumed = await db.rpc("consume_runner_token", {
+        const consumed = await db.rpc("voicecraft_consume_runner_token", {
           p_jti: tokenPayload.jti,
           p_user_id: tokenPayload.sub,
         });
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/builder/verify-run")({
         throw new ApiError(400, "invalid_block_count", "requestedBlocks must be an integer from 1 to 1,000,000.");
       }
       const db = supabaseAdmin as any;
-      const { data, error } = await db.rpc("verify_and_consume_builder_run", {
+      const { data, error } = await db.rpc("voicecraft_verify_and_consume_builder_run", {
         p_user_id: userId,
         p_requested_blocks: count,
       });

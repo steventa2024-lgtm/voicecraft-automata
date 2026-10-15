@@ -1,5 +1,14 @@
 -- Additive desktop sign-in codes, runner-token replay protection, and reservation release.
 -- Does not change plan prices, existing subscription rows, or license records.
+-- Dedicated VoiceCraft databases only. The shared Twitch bot project must use
+-- the voicecraft_* objects in 202610150003_voicecraft_isolated.sql.
+
+do $$ begin
+  if to_regclass('public.voicecraft_profiles') is null
+     and to_regclass('public.profiles') is not null then
+    raise exception 'Refusing to attach desktop auth tables to an existing non-VoiceCraft profiles table.';
+  end if;
+end $$;
 
 create table if not exists public.runner_token_uses (
   jti text primary key,

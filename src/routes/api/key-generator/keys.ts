@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/key-generator/keys")({
         await requireKeygenAdmin(request);
         const db = await database();
         const { data, error } = await db
-          .from("license_keys")
+          .from("voicecraft_license_keys")
           .select("id,key_hint,status,claimed_by_user_id,created_at,activated_at,revoked_at")
           .order("created_at", { ascending: false })
           .limit(100);
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/api/key-generator/keys")({
           let created = false;
           for (let attempt = 0; attempt < 5 && !created; attempt += 1) {
             const key = generateLicenseKey();
-            const { error } = await db.from("license_keys").insert({
+            const { error } = await db.from("voicecraft_license_keys").insert({
               key_hash: await sha256(key.toUpperCase()),
               key_hint: keyHint(key),
             });
@@ -78,7 +78,7 @@ export const Route = createFileRoute("/api/key-generator/keys")({
           throw new ApiError(400, "invalid_request", "A key ID and revoked status are required.");
         }
         const db = await database();
-        const { data, error } = await db.rpc("revoke_license_key", { p_key_id: id });
+        const { data, error } = await db.rpc("voicecraft_revoke_license_key", { p_key_id: id });
         if (error) throw error;
         if (!data?.ok) throw new ApiError(404, data?.code || "key_not_found", data?.message || "License key was not found.");
         return Response.json(data);

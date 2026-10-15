@@ -1,5 +1,21 @@
 -- ZeroPulse accounts, Stripe entitlements, atomic daily usage, and VIP licenses.
--- Apply with `supabase db push` or through the Lovable/Supabase SQL editor.
+-- Dedicated VoiceCraft databases only. Do not apply this file to the shared
+-- Twitch bot project lzznghwmonoewimahtdq. That project uses
+-- 202610150003_voicecraft_isolated.sql.
+
+do $$ begin
+  if to_regclass('public.profiles') is not null
+     or to_regprocedure('public.handle_new_user()') is not null
+     or exists (
+       select 1
+       from pg_trigger as trigger
+       join pg_class as relation on relation.oid = trigger.tgrelid
+       join pg_namespace as namespace on namespace.oid = relation.relnamespace
+       where namespace.nspname = 'auth' and relation.relname = 'users'
+     ) then
+    raise exception 'Refusing to replace shared auth objects. Apply 202610150003_voicecraft_isolated.sql on the Twitch bot project.';
+  end if;
+end $$;
 
 create extension if not exists pgcrypto;
 

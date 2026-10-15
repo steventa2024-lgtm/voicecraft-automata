@@ -32,6 +32,9 @@ dist-ssr
 *.sln
 *.sw?
 .zeropulse-device-id
+mobile/dist-validation/
+mobile/test-results/
+mobile/playwright-report/
 
 # Packaged companion artifacts are uploaded to private R2, never served from git/public.
 private/downloads/*.zip

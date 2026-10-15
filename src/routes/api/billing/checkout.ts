@@ -11,7 +11,7 @@ export const Route = createFileRoute("/api/billing/checkout")({
       if (!isPlanTier(tier)) throw new ApiError(400, "invalid_plan", "Choose a valid subscription plan.");
       const db = supabaseAdmin as any;
       const { data: profile, error } = await db
-        .from("profiles")
+        .from("voicecraft_profiles")
         .select("stripe_customer_id")
         .eq("id", user.id)
         .single();
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/billing/checkout")({
         });
         customerId = customer.id;
         const { error: updateError } = await db
-          .from("profiles")
+          .from("voicecraft_profiles")
           .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
           .eq("id", user.id);
         if (updateError) throw updateError;

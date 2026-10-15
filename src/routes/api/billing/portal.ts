@@ -9,7 +9,7 @@ export const Route = createFileRoute("/api/billing/portal")({
       const user = await requireApiUser(request);
       const db = supabaseAdmin as any;
       const { data, error } = await db
-        .from("profiles")
+        .from("voicecraft_profiles")
         .select("stripe_customer_id")
         .eq("id", user.id)
         .single();

@@ -1,0 +1,76 @@
+# VoiceCraft Mobile
+
+Expo app for iPhone and Android. It is the console companion. It does not place blocks on the phone, and it does not replace the website or the desktop app.
+
+## What works in this tree
+
+- Email and password sign-in, account creation, password reset, and sign-out against the existing Supabase project once `mobile/.env` is filled in.
+- Six tabs: Home, Build, Console, Library, Catalog and My PC. Settings is available from the branded header.
+- Push-to-talk recording. Audio is uploaded only after you stop. A transcript never approves a build.
+- Preview, explicit approval, cancel, and job polling against `services/cloud-api`.
+- Local template blueprints can be edited, saved, reopened, renamed, duplicated, favorited and deleted. Cloud preview blueprints stay in the separate Cloud library.
+- Blueprint Studio renders the executable plan, supports effective template edits and raised placement, and requires matching PC preparation before explicit approval.
+- Private-network PC pairing, truthful connection/permission status and supported build controls. A phone cannot enable desktop permissions.
+- Console steps for PS5 and Xbox. Connection status comes from `GET /api/mobile/health`. The screen does not invent a connected server.
+
+See [redesign verification](../docs/MOBILE_REDESIGN.md) for actual application captures, comparisons against the approved designs, tests and remaining device/visual limitations.
+
+## What is not verified
+
+- No physical iPhone or Android install was performed here.
+- No PS5 or Xbox joined a server.
+- Whisper and Ollama are optional and were not run.
+- The Minecraft Docker profile was not started. Queued jobs fail closed, with no blocks reported, when the host is down.
+- Remote push notifications are not configured.
+
+## Run the API
+
+From the repository root, with Node.js 22:
+
+```sh
+export CLOUD_SERVER_TOKEN="$(openssl rand -hex 24)"
+export CLOUD_PAIR_PEPPER="$(openssl rand -hex 24)"
+export CLOUD_LOCAL_ACCOUNTS=1
+node services/cloud-api/src/server.js
+```
+
+The API listens on `127.0.0.1:8787`. A phone cannot use that address. Use your computer's LAN IP in `EXPO_PUBLIC_VOICECRAFT_API_URL`, or put HTTPS in front of it before a production build.
+
+`CLOUD_LOCAL_ACCOUNTS=1` uses the SQLite ledger in the cloud process. Leave it unset and set `VOICECRAFT_SITE_URL` when the existing website should enforce Stripe limits through `/api/builder/token` and `/api/builder/verify-run`.
+
+## Run Expo
+
+```sh
+cd mobile
+npm install
+npx expo install --check
+npm run typecheck
+npx expo start
+```
+
+On an iPhone, install Expo Go for this SDK from the App Store and scan the QR code from `npx expo start --lan`. Tunnel mode is optional and uses an Expo account; prefer LAN on the same private Wi-Fi so no extra service is required.
+
+Settings stores one of three API modes: local developer, community server, or your own server. The phone still only calls the VoiceCraft API. Sign-in uses the existing Supabase project. Session refresh signs the player out when the refresh token is no longer accepted.
+
+This environment did not complete a device install. Do not treat a Metro start as a passed iPhone test.
+
+## Later store builds
+
+`eas.json` has development, preview, and production profiles without a paid resource class. Use Expo Go now. Use `eas build` only inside the free quota. Android can also be built locally after `npx expo prebuild` if the Android SDK is already installed. iOS store distribution needs the Apple Developer Program, which is the only approved future expense, plus a Mac or a free-tier EAS build. Do not publish to the App Store yet. The bundle id `com.zeropulse.voicecraftmobile` stays as it is.
+
+## Cloud Minecraft
+
+```sh
+cd infra/docker
+export CLOUD_SERVER_TOKEN="$(openssl rand -hex 24)"
+export CLOUD_PAIR_PEPPER="$(openssl rand -hex 24)"
+docker compose up cloud-api build-worker
+```
+
+Add a Minecraft world only after you accept Mojang's EULA yourself:
+
+```sh
+EULA=TRUE docker compose --profile minecraft up
+```
+
+Bedrock port `19132/udp` is the gameplay port. RCON is disabled. See `docs/MOBILE_CLOUD.md`.

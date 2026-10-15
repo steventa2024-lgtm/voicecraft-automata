@@ -2,15 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { planToInstruction } from "../../packages/protocol/src/ollama.js";
 import { describeInstruction, parseCommand } from "../../packages/protocol/src/parser.js";
 import { buildPlan } from "../../packages/protocol/src/plan.js";
+import { Catalog } from "./catalog";
+import { CompanionPanel } from "./companion";
 import { VoxelPreview } from "./preview";
 import type { AccountState, BridgeEvent, PreviewResult } from "./types";
 
-type Section = "home" | "studio" | "library" | "history" | "connections" | "settings";
+type Section = "home" | "studio" | "catalog" | "library" | "companion" | "history" | "connections" | "settings";
 
 const NAV: Array<{ id: Section; label: string }> = [
   { id: "home", label: "Home" },
   { id: "studio", label: "Build Studio" },
+  { id: "catalog", label: "Catalog" },
   { id: "library", label: "Blueprints" },
+  { id: "companion", label: "Companion" },
   { id: "history", label: "History" },
   { id: "connections", label: "Connections" },
   { id: "settings", label: "Settings" },
@@ -31,9 +35,9 @@ function localPreview(text: string): PreviewResult {
     const plan = buildPlan(planning);
     return {
       instruction,
-      blocks: plan.blocks.slice(0, 15_000),
+      blocks: plan.blocks,
       count: plan.count,
-      limited: plan.blocks.length > 15_000,
+      limited: false,
       description: describeInstruction(instruction),
       materials: plan.materials,
       bounds: plan.bounds,
@@ -56,6 +60,7 @@ export function App() {
   const [log, setLog] = useState<string[]>(["Desktop dashboard loaded from local files."]);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [jobId, setJobId] = useState("");
+  const [planWarnings, setPlanWarnings] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -69,7 +74,10 @@ export function App() {
       if (inner.status) setExecutor(inner.status);
       if (typeof inner.progress === "number") setProgress(inner.progress);
       if (inner.type === "mode") setMinecraft(inner.message || inner.mode || "Minecraft responded");
-      if (inner.type === "plan" && inner.jobId) setJobId(inner.jobId);
+      if (inner.type === "plan" && inner.jobId) {
+        setJobId(inner.jobId);
+        setPlanWarnings(Array.isArray(inner.warnings) ? inner.warnings.filter((warning) => typeof warning === "string") : []);
+      }
       if (inner.status === "connected") setMinecraft("Bot is in the world");
       if (inner.type === "error" && inner.message) setError(inner.message);
     });
@@ -156,7 +164,32 @@ export function App() {
               }}
             />
           ) : null}
-          {section === "library" ? <Library onUse={(text) => { setSection("studio"); void localPreview(text); setPreview(localPreview(text)); }} /> : null}
+          {section === "catalog" ? (
+            <Catalog
+              bridgeRunning={bridgeRunning}
+              jobId={jobId}
+              planWarnings={planWarnings}
+              onPrepare={async (instruction, description) => {
+                setError("");
+                setJobId("");
+                setPlanWarnings([]);
+                const remote = await call<PreviewResult>("bridge.command", { text: description, instruction });
+                setPreview({ ...remote, description: remote.description || description });
+              }}
+              onApprove={async () => {
+                if (!jobId) {
+                  setError("Prepare the blueprint and wait for the bridge job before approving.");
+                  return;
+                }
+                await call("bridge.approve", { jobId });
+              }}
+              onPause={() => void call("bridge.pause").catch((reason) => setError(String(reason)))}
+              onResume={() => void call("bridge.resume").catch((reason) => setError(String(reason)))}
+              onCancel={() => void call("bridge.cancel").catch((reason) => setError(String(reason)))}
+            />
+          ) : null}
+          {section === "library" ? <Library onUse={(text) => { setSection("studio"); setPreview(localPreview(text)); }} /> : null}
+          {section === "companion" ? <CompanionPanel /> : null}
           {section === "history" ? <History onError={setError} /> : null}
           {section === "connections" ? (
             <Connections
@@ -164,6 +197,7 @@ export function App() {
               running={bridgeRunning}
               onStart={async (payload) => {
                 await call("bridge.start", payload);
+                setSettings(await call<Record<string, unknown>>("settings.get"));
                 setBridgeRunning(true);
               }}
               onStop={async () => {
@@ -487,12 +521,14 @@ function Connections({
   const [username, setUsername] = useState(String(settings.minecraftUsername || "ZeroPulse"));
   const [version, setVersion] = useState(String(settings.minecraftVersion || ""));
   const [authMode, setAuth] = useState(settings.minecraftAuth === "microsoft" ? "microsoft" : "offline");
+  const [placementMode, setPlacementMode] = useState(String(settings.placementMode || "auto"));
   useEffect(() => {
     setHost(String(settings.minecraftHost || "localhost"));
     setPort(String(settings.minecraftPort || 25565));
     setUsername(String(settings.minecraftUsername || "ZeroPulse"));
     setVersion(String(settings.minecraftVersion || ""));
     setAuth(settings.minecraftAuth === "microsoft" ? "microsoft" : "offline");
+    setPlacementMode(String(settings.placementMode || "auto"));
   }, [settings]);
   return (
     <section className="max-w-xl">
@@ -501,15 +537,23 @@ function Connections({
       <label className="mt-4 block text-sm">Host<input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" value={host} onChange={(event) => setHost(event.target.value)} /></label>
       <label className="mt-3 block text-sm">Port<input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" value={port} onChange={(event) => setPort(event.target.value)} /></label>
       <label className="mt-3 block text-sm">Bot username<input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" value={username} onChange={(event) => setUsername(event.target.value)} /></label>
-      <label className="mt-3 block text-sm">Version (optional)<input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" value={version} onChange={(event) => setVersion(event.target.value)} placeholder="1.20.4" /></label>
+      <label className="mt-3 block text-sm">Minecraft version<input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" value={version} onChange={(event) => setVersion(event.target.value)} placeholder="1.21.1" /></label>
       <label className="mt-3 block text-sm">Authentication
         <select className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" value={authMode} onChange={(event) => setAuth(event.target.value)}>
           <option value="offline">Offline / LAN</option>
           <option value="microsoft">Microsoft</option>
         </select>
       </label>
+      <label className="mt-3 block text-sm">Placement mode
+        <select className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" value={placementMode} onChange={(event) => setPlacementMode(event.target.value)}>
+          <option value="auto">Detect automatically</option>
+          <option value="command">Operator commands — detailed block states</option>
+          <option value="creative">Creative inventory — basic blocks only</option>
+        </select>
+      </label>
+      <p className="mt-2 text-xs text-[#93a0b8]">Detailed structures target Java 1.21.1. Operator commands require server-granted operator rights; selecting this mode does not grant them. Account authorization and blueprint approval are still required.</p>
       <div className="mt-4 flex gap-2">
-        <button className="rounded-xl bg-[#2f7bff] px-4 py-2" onClick={() => void onStart({ host, port: Number(port), username, version, auth: authMode, bridgePort: Number(settings.bridgePort || 8765) }).catch((error) => onError(error instanceof Error ? error.message : "Could not start the bridge."))}>{running ? "Restart bridge" : "Start bridge"}</button>
+        <button className="rounded-xl bg-[#2f7bff] px-4 py-2" onClick={() => void onStart({ host, port: Number(port), username, version, auth: authMode, placementMode, bridgePort: Number(settings.bridgePort || 8765) }).catch((error) => onError(error instanceof Error ? error.message : "Could not start the bridge."))}>{running ? "Restart bridge" : "Start bridge"}</button>
         <button className="rounded-xl bg-white/10 px-4 py-2" onClick={() => void onStop()}>Stop bridge</button>
       </div>
       <p className="mt-4 text-sm text-[#93a0b8]">Bedrock and console gateways are not part of this build. In-game chat commands stay off unless you explicitly enable them in Settings, and they still cannot approve destructive actions.</p>

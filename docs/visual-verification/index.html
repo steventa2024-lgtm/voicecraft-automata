@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  /><title>VoiceCraft · Visual verification</title
+  ><style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+      background: #030d1b;
+      color: #edf5ff;
+    }
+    body {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 32px 22px;
+    }
+    h1 {
+      font-size: 32px;
+      letter-spacing: -1px;
+    }
+    p {
+      color: #a6bad5;
+      max-width: 900px;
+      line-height: 1.6;
+    }
+    nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      padding: 12px 0;
+      background: #030d1bf5;
+      z-index: 2;
+    }
+    a {
+      color: #35b8ff;
+    }
+    nav a {
+      border: 1px solid #244b6e;
+      padding: 8px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+    section {
+      padding-top: 20px;
+      margin-bottom: 48px;
+    }
+    h2 {
+      font-size: 24px;
+    }
+    .pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    figure {
+      margin: 0;
+      background: #0b1b2e;
+      border: 1px solid #254360;
+      border-radius: 14px;
+      padding: 12px;
+    }
+    figcaption {
+      color: #b8d3f0;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    img {
+      display: block;
+      width: 100%;
+      max-width: 393px;
+      height: auto;
+      margin: 0 auto;
+      border-radius: 8px;
+    }
+    .detail {
+      display: flex;
+      gap: 16px;
+      overflow: auto;
+    }
+    .detail figure {
+      min-width: 280px;
+      max-width: 393px;
+    }
+    .badge {
+      color: #ffc968;
+    }
+    @media (max-width: 580px) {
+      body {
+        padding: 20px 10px;
+      }
+      .pair {
+        gap: 6px;
+      }
+      figure {
+        padding: 5px;
+      }
+      figcaption {
+        font-size: 11px;
+      }
+      h1 {
+        font-size: 25px;
+      }
+    }
+  </style>
+  <body>
+    <h1>ZeroPulse VoiceCraft</h1>
+    <p>
+      Approved references alongside screenshots of the running Expo app, captured at 393 × 852 CSS
+      pixels in Chrome on Windows. Captures use an isolated test sign-in with external requests
+      blocked. They show real UI components and unavailable connections; they are not physical
+      iPhone captures or evidence of a Minecraft build.
+    </p>
+    <p class="badge">
+      The composition and working flows are implemented. Exact visual parity is not claimed: the
+      preserved template generators produce much simpler architecture than the approved
+      illustrations. The plan renderer does not invent roofs, trees, terrain or furniture.
+    </p>
+    <nav>
+      <a href="#home">Home</a><a href="#catalog">Catalog</a><a href="#blueprint">Blueprint Studio</a
+      ><a href="#console">Console</a><a href="#my-pc">My PC</a
+      ><a href="#details">Controls & Library</a>
+    </nav>
+    <section id="home">
+      <h2>Home</h2>
+      <p>
+        Branded landscape, four live status cards, Build Studio banner, featured structures, Quick
+        Actions and all six tabs. Unpaired states replace the reference’s sample player and world.
+      </p>
+      <div class="pair">
+        <figure>
+          <figcaption>Approved reference · supplied by user</figcaption>
+          <img src="approved-home.jpg" alt="Approved Home design" />
+        </figure>
+        <figure>
+          <figcaption>Actual Expo app · browser · disconnected</figcaption>
+          <img src="home-web-393.png" alt="Running Home screen" />
+        </figure>
+      </div>
+    </section>
+    <section id="catalog">
+      <h2>Catalog</h2>
+      <p>
+        Search, category filters, favorites and two-column cards. Every thumbnail is rendered from
+        the executable plan. Existing simple template geometry is substantially less ornate than the
+        reference.
+      </p>
+      <div class="pair">
+        <figure>
+          <figcaption>Approved reference · supplied by user</figcaption>
+          <img src="approved-catalog.jpg" alt="Approved Catalog design" />
+        </figure>
+        <figure>
+          <figcaption>Actual Expo app · browser · disconnected</figcaption>
+          <img src="catalog-web-393.png" alt="Running Catalog screen" />
+        </figure>
+      </div>
+    </section>
+    <section id="blueprint">
+      <h2>Blueprint Studio</h2>
+      <p>
+        Exact block positions and materials, four camera views, zoom, transforms, supported
+        placement, local saves and fingerprint-bound approval. Controls continue below the fold to
+        remain operable on a narrow phone.
+      </p>
+      <div class="pair">
+        <figure>
+          <figcaption>Approved reference · supplied by user</figcaption>
+          <img src="approved-blueprint.jpg" alt="Approved Blueprint Studio design" />
+        </figure>
+        <figure>
+          <figcaption>Actual Expo app · browser · disconnected</figcaption>
+          <img src="blueprint-web-393.png" alt="Running Blueprint Studio screen" />
+        </figure>
+      </div>
+    </section>
+    <section id="console">
+      <h2>Console</h2>
+      <p>
+        Platform selection, health checks, published address, clipboard and eight-character pairing.
+        The reference’s sample address and ready indicators are absent when the server is
+        unavailable.
+      </p>
+      <div class="pair">
+        <figure>
+          <figcaption>Approved reference · supplied by user</figcaption>
+          <img src="approved-console.jpg" alt="Approved Console design" />
+        </figure>
+        <figure>
+          <figcaption>Actual Expo app · browser · disconnected</figcaption>
+          <img src="console-web-393.png" alt="Running Console screen" />
+        </figure>
+      </div>
+    </section>
+    <section id="my-pc">
+      <h2>My PC</h2>
+      <p>
+        Unpaired PC shown. Pairing, permissions, actual progress, build controls and navigation are
+        implemented. No connected machine or build result was fabricated for these screenshots.
+      </p>
+      <div class="pair">
+        <figure>
+          <figcaption>Approved reference · supplied by user</figcaption>
+          <img src="approved-my-pc.jpg" alt="Approved My PC design" />
+        </figure>
+        <figure>
+          <figcaption>Actual Expo app · browser · disconnected</figcaption>
+          <img src="my-pc-web-393.png" alt="Running My PC screen" />
+        </figure>
+      </div>
+    </section>
+    <section id="details">
+      <h2>Controls and local Library</h2>
+      <p>
+        Additional captures at actual scroll positions. The saved blueprint was created through the
+        editor’s Save action. Approval remains unavailable without a matching PC confirmation.
+      </p>
+      <div class="detail">
+        <figure>
+          <figcaption>Blueprint controls</figcaption>
+          <img src="blueprint-controls-web-393.png" alt="Blueprint controls in the running app" />
+        </figure>
+        <figure>
+          <figcaption>Console pairing</figcaption>
+          <img src="console-pairing-web-393.png" alt="Console pairing in the running app" />
+        </figure>
+        <figure>
+          <figcaption>PC build actions</figcaption>
+          <img src="my-pc-actions-web-393.png" alt="PC build actions in the running app" />
+        </figure>
+        <figure>
+          <figcaption>Saved local blueprint</figcaption>
+          <img src="library-web-393.png" alt="Saved local blueprint in the running app" />
+        </figure>
+      </div>
+    </section>
+    <p><a href="../MOBILE_REDESIGN.md">Implementation and validation notes</a></p>
+  </body>
+</html>

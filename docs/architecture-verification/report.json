@@ -1,0 +1,338 @@
+[
+  {
+    "id": "starter-cottage",
+    "name": "Starter Survival Cottage",
+    "before": {
+      "operations": 279,
+      "solid": 277,
+      "materials": 4,
+      "stateful": 0,
+      "bounds": {
+        "min": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "max": {
+          "x": 8,
+          "y": 8,
+          "z": 7
+        },
+        "width": 9,
+        "height": 9,
+        "depth": 8
+      },
+      "fingerprint": "8eea2ee0"
+    },
+    "after": {
+      "operations": 2006,
+      "solid": 1537,
+      "materials": 23,
+      "stateful": 532,
+      "bounds": {
+        "min": {
+          "x": -5,
+          "y": -2,
+          "z": -5
+        },
+        "max": {
+          "x": 14,
+          "y": 13,
+          "z": 13
+        },
+        "width": 20,
+        "height": 16,
+        "depth": 19
+      },
+      "fingerprint": "971a8297"
+    }
+  },
+  {
+    "id": "oak-cabin",
+    "name": "Rustic Oak Cabin",
+    "before": {
+      "operations": 264,
+      "solid": 262,
+      "materials": 4,
+      "stateful": 0,
+      "bounds": {
+        "min": {
+          "x": -1,
+          "y": 0,
+          "z": -2
+        },
+        "max": {
+          "x": 9,
+          "y": 5,
+          "z": 7
+        },
+        "width": 11,
+        "height": 6,
+        "depth": 10
+      },
+      "fingerprint": "3a4b41c7"
+    },
+    "after": {
+      "operations": 2693,
+      "solid": 2004,
+      "materials": 20,
+      "stateful": 747,
+      "bounds": {
+        "min": {
+          "x": -2,
+          "y": -2,
+          "z": -5
+        },
+        "max": {
+          "x": 21,
+          "y": 14,
+          "z": 15
+        },
+        "width": 24,
+        "height": 17,
+        "depth": 21
+      },
+      "fingerprint": "c743c621"
+    }
+  },
+  {
+    "id": "lakeside-cottage",
+    "name": "Lakeside Cottage",
+    "before": {
+      "operations": 297,
+      "solid": 295,
+      "materials": 4,
+      "stateful": 0,
+      "bounds": {
+        "min": {
+          "x": 0,
+          "y": -1,
+          "z": 0
+        },
+        "max": {
+          "x": 8,
+          "y": 4,
+          "z": 13
+        },
+        "width": 9,
+        "height": 6,
+        "depth": 14
+      },
+      "fingerprint": "decb4ccf"
+    },
+    "after": {
+      "operations": 2790,
+      "solid": 2234,
+      "materials": 24,
+      "stateful": 826,
+      "bounds": {
+        "min": {
+          "x": -6,
+          "y": -2,
+          "z": -5
+        },
+        "max": {
+          "x": 25,
+          "y": 13,
+          "z": 23
+        },
+        "width": 32,
+        "height": 16,
+        "depth": 29
+      },
+      "fingerprint": "37399946"
+    }
+  },
+  {
+    "id": "forest-treehouse",
+    "name": "Forest Treehouse",
+    "before": {
+      "operations": 149,
+      "solid": 147,
+      "materials": 4,
+      "stateful": 0,
+      "bounds": {
+        "min": {
+          "x": 2,
+          "y": 0,
+          "z": 1
+        },
+        "max": {
+          "x": 8,
+          "y": 12,
+          "z": 8
+        },
+        "width": 7,
+        "height": 13,
+        "depth": 8
+      },
+      "fingerprint": "ab656936"
+    },
+    "after": {
+      "operations": 2856,
+      "solid": 2607,
+      "materials": 19,
+      "stateful": 1319,
+      "bounds": {
+        "min": {
+          "x": 0,
+          "y": -2,
+          "z": 0
+        },
+        "max": {
+          "x": 20,
+          "y": 27,
+          "z": 18
+        },
+        "width": 21,
+        "height": 30,
+        "depth": 19
+      },
+      "fingerprint": "c2d70330"
+    }
+  },
+  {
+    "id": "stone-keep",
+    "name": "Medieval Stone Keep",
+    "before": {
+      "operations": 528,
+      "solid": 526,
+      "materials": 3,
+      "stateful": 0,
+      "bounds": {
+        "min": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "max": {
+          "x": 10,
+          "y": 9,
+          "z": 10
+        },
+        "width": 11,
+        "height": 10,
+        "depth": 11
+      },
+      "fingerprint": "2025dcdd"
+    },
+    "after": {
+      "operations": 5780,
+      "solid": 4587,
+      "materials": 15,
+      "stateful": 775,
+      "bounds": {
+        "min": {
+          "x": -1,
+          "y": -1,
+          "z": -3
+        },
+        "max": {
+          "x": 25,
+          "y": 19,
+          "z": 25
+        },
+        "width": 27,
+        "height": 21,
+        "depth": 29
+      },
+      "fingerprint": "7cc23b46"
+    }
+  },
+  {
+    "id": "cliffside-house",
+    "name": "Cliffside Mountain House",
+    "before": {
+      "operations": 375,
+      "solid": 373,
+      "materials": 2,
+      "stateful": 0,
+      "bounds": {
+        "min": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "max": {
+          "x": 10,
+          "y": 7,
+          "z": 9
+        },
+        "width": 11,
+        "height": 8,
+        "depth": 10
+      },
+      "fingerprint": "f904feef"
+    },
+    "after": {
+      "operations": 2912,
+      "solid": 2345,
+      "materials": 22,
+      "stateful": 717,
+      "bounds": {
+        "min": {
+          "x": -6,
+          "y": -2,
+          "z": -3
+        },
+        "max": {
+          "x": 18,
+          "y": 17,
+          "z": 16
+        },
+        "width": 25,
+        "height": 20,
+        "depth": 20
+      },
+      "fingerprint": "ffdd6b79"
+    }
+  },
+  {
+    "id": "glass-villa",
+    "name": "Modern Glass Villa",
+    "before": {
+      "operations": 488,
+      "solid": 486,
+      "materials": 3,
+      "stateful": 0,
+      "bounds": {
+        "min": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "max": {
+          "x": 15,
+          "y": 5,
+          "z": 8
+        },
+        "width": 16,
+        "height": 6,
+        "depth": 9
+      },
+      "fingerprint": "6bdfaac3"
+    },
+    "after": {
+      "operations": 3656,
+      "solid": 2567,
+      "materials": 19,
+      "stateful": 194,
+      "bounds": {
+        "min": {
+          "x": -2,
+          "y": -1,
+          "z": -3
+        },
+        "max": {
+          "x": 24,
+          "y": 10,
+          "z": 21
+        },
+        "width": 27,
+        "height": 12,
+        "depth": 25
+      },
+      "fingerprint": "1216c832"
+    }
+  }
+]

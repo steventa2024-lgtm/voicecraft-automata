@@ -15,10 +15,25 @@ const blueprintSchema = z
     dimensions: z.object({
       width: z.number().int().min(1).max(64),
       depth: z.number().int().min(1).max(64),
-      height: z.number().int().min(1).max(96),
+      height: z.number().int().min(1).max(384),
     }),
     favorite: z.boolean().default(false),
     notes: z.string().max(500).default(""),
+    generatorVersion: z.number().int().min(1).max(2).optional(),
+    templateId: z.string().regex(/^[a-z0-9-]{3,80}$/).optional(),
+    templateOptions: z
+      .object({
+        width: z.number().int().min(1).max(64).optional(),
+        depth: z.number().int().min(1).max(64).optional(),
+        floors: z.number().int().min(1).max(8).optional(),
+        material: z.string().regex(/^[a-z0-9_]+$/).optional(),
+        accent: z.string().regex(/^[a-z0-9_]+$/).optional(),
+        rotation: z.number().int().min(0).max(3).optional(),
+        mirror: z.enum(["x", "z"]).nullable().optional(),
+        placement: z.enum(["ground", "floating"]).optional(),
+        elevation: z.number().int().min(0).max(16).optional(),
+      })
+      .optional(),
   })
   .strict();
 

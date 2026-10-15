@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { externalUrl, mergeSettings, scrubChildEnv, senderAllowed, validateInvoke } from "../desktop/electron/policy.js";
 
 test("IPC rejects unknown channels and forged approval shortcuts", () => {
@@ -16,6 +17,17 @@ test("settings reject service-role keys and remote Ollama hosts", () => {
   assert.equal(validateInvoke("settings.set", { ollamaUrl: "http://203.0.113.8:11434" }).ok, false);
   assert.equal(validateInvoke("settings.set", { ollamaUrl: "http://127.0.0.1:11434" }).ok, true);
   assert.equal(validateInvoke("settings.set", { surprise: true }).ok, false);
+});
+
+test("desktop placement mode is explicit and rejects unsupported values", () => {
+  const connection = { host: "127.0.0.1", port: 25566, version: "1.21.1", username: "VoiceCraftTest" };
+  assert.equal(validateInvoke("bridge.start", connection).payload.placementMode, "auto");
+  for (const placementMode of ["auto", "command", "creative"]) {
+    assert.equal(validateInvoke("bridge.start", { ...connection, placementMode }).payload.placementMode, placementMode);
+    assert.equal(validateInvoke("settings.set", { placementMode }).ok, true);
+  }
+  assert.equal(validateInvoke("bridge.start", { ...connection, placementMode: "shell" }).ok, false);
+  assert.equal(validateInvoke("settings.set", { placementMode: "shell" }).ok, false);
 });
 
 test("external links stay on the configured website origin", () => {
@@ -65,7 +77,7 @@ test("desktop sources do not point the product at a Lovable preview", async () =
       else if (/\.(js|cjs|html|tsx|ts|css)$/.test(entry)) files.push(full);
     }
   };
-  walk(new URL("../desktop", import.meta.url).pathname);
+  walk(fileURLToPath(new URL("../desktop", import.meta.url)));
   const combined = files.map((file) => readFileSync(file, "utf8")).join("\n");
   assert.equal(combined.includes("lovable.app"), false);
   assert.equal(combined.includes("id-preview--"), false);

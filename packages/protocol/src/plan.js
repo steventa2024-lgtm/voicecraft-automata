@@ -1,17 +1,46 @@
+import { canonicalStates } from "./block-state.js";
+import { planFingerprint } from "./blueprint-edit.js";
 import { generateStructure } from "./generators.js";
-import { MAX_OPERATIONS } from "./limits.js";
+import { generateTemplate } from "./templates.js";
+import { isProtectedBlock, MAX_OPERATIONS } from "./limits.js";
 import { worldBoundsError } from "./coordinates.js";
+
+/** Drop container writes and writes onto containers. The caller must not place the skipped cells. */
+export function partitionProtectedTargets(blocks, sample) {
+  const place = [];
+  const skipped = [];
+  for (const block of blocks) {
+    if (isProtectedBlock(block.block)) {
+      skipped.push(block);
+      continue;
+    }
+    const existing = sample?.(block);
+    if (existing && isProtectedBlock(existing)) {
+      skipped.push(block);
+      continue;
+    }
+    place.push(block);
+  }
+  return { place, skipped };
+}
 
 function dedupe(blocks) {
   const map = new Map();
   for (const block of blocks) {
-    if (!block || !Number.isFinite(block.x) || !Number.isFinite(block.y) || !Number.isFinite(block.z)) continue;
+    if (
+      !block ||
+      !Number.isFinite(block.x) ||
+      !Number.isFinite(block.y) ||
+      !Number.isFinite(block.z)
+    )
+      continue;
     if (typeof block.block !== "string" || !/^[a-z0-9_]+$/.test(block.block)) continue;
     map.set(`${block.x}|${block.y}|${block.z}`, {
       x: block.x | 0,
       y: block.y | 0,
       z: block.z | 0,
       block: block.block,
+      ...(block.states ? { states: canonicalStates(block.block, block.states) } : {}),
     });
   }
   return [...map.values()];
@@ -42,10 +71,33 @@ export function buildPlan(instruction) {
     error.code = "invalid_instruction";
     throw error;
   }
-  const blocks =
-    instruction.action === "clear" ? planClear(instruction) : dedupe(generateStructure(instruction));
+  let warnings = [];
+  const blocks = dedupe(
+    instruction.templateId
+      ? (() => {
+          const generated = generateTemplate(
+            instruction.templateId,
+            instruction.templateOptions || {},
+          );
+          warnings = generated.warnings;
+          return generated.blocks;
+        })()
+      : instruction.action === "clear"
+        ? planClear(instruction)
+        : generateStructure(instruction),
+  );
+  const protectedWrite = blocks.find((block) => isProtectedBlock(block.block));
+  if (protectedWrite) {
+    const error = new Error(
+      `The plan places ${protectedWrite.block}, which is protected. Remove it and generate the preview again.`,
+    );
+    error.code = "protected_write";
+    throw error;
+  }
   if (blocks.length > MAX_OPERATIONS) {
-    const error = new Error(`Plan has ${blocks.length} operations, above the cap of ${MAX_OPERATIONS}.`);
+    const error = new Error(
+      `Plan has ${blocks.length} operations, above the cap of ${MAX_OPERATIONS}.`,
+    );
     error.code = "operation_cap";
     throw error;
   }
@@ -81,11 +133,15 @@ export function buildPlan(instruction) {
       depth: maxZ - minZ + 1,
     },
     materials: [...materials],
+    airCount: blocks.filter((block) => block.block === "air").length,
+    fingerprint: planFingerprint(blocks),
+    templateId: instruction.templateId || null,
+    warnings,
   };
 }
 
 export function assertPlanFitsWorld(originY, plan) {
-  const message = worldBoundsError(originY, plan.bounds.height);
+  const message = worldBoundsError(originY + (plan.bounds.min?.y || 0), plan.bounds.height);
   if (message) {
     const error = new Error(message);
     error.code = "world_bounds";

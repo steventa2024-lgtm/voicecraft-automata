@@ -1,3 +1,5 @@
+import { transformStates } from "./block-state.js";
+import { boundsOf } from "./blueprint-edit.js";
 import { WORLD_MAX_Y, WORLD_MIN_Y } from "./limits.js";
 
 /**
@@ -90,6 +92,21 @@ export function worldPosition(origin, local, rotation, width, depth) {
     y: origin.y + local.y,
     z: origin.z + origin.right.z * rotated.x + origin.buildDir.z * rotated.z,
     block: local.block,
+    ...(local.states
+      ? {
+          states: transformStates(
+            local.states,
+            (x, z) => {
+              for (let i = 0; i < (((rotation || 0) % 4) + 4) % 4; i++) [x, z] = [-z, x];
+              return [
+                origin.right.x * x + origin.buildDir.x * z,
+                origin.right.z * x + origin.buildDir.z * z,
+              ];
+            },
+            origin.right.x * origin.buildDir.z - origin.right.z * origin.buildDir.x < 0,
+          ),
+        }
+      : {}),
   };
 }
 
@@ -99,4 +116,19 @@ export function worldBoundsError(originY, height) {
   const top = originY + height - 1;
   if (top > WORLD_MAX_Y) return `Build reaches Y=${top}, above ${WORLD_MAX_Y}.`;
   return null;
+}
+
+/** Survey the actual transformed plan, including negative overhangs and foundations. */
+export function worldPlanBounds(origin, plan, instruction) {
+  return boundsOf(
+    plan.blocks.map((b) =>
+      worldPosition(
+        origin,
+        b,
+        instruction.rotation || 0,
+        instruction.dimensions.width,
+        instruction.dimensions.depth,
+      ),
+    ),
+  );
 }
