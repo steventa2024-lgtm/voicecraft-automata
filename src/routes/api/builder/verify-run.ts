@@ -7,9 +7,19 @@ export const Route = createFileRoute("/api/builder/verify-run")({
   server: { handlers: { POST: async ({ request }) => {
     try {
       const runnerToken = request.headers.get("x-zeropulse-runner-token");
-      const userId = runnerToken
-        ? verifyRunnerToken(runnerToken).sub
-        : (await requireApiUser(request)).id;
+      const tokenPayload = runnerToken ? verifyRunnerToken(runnerToken) : null;
+      const userId = tokenPayload ? tokenPayload.sub : (await requireApiUser(request)).id;
+      if (tokenPayload) {
+        const db = supabaseAdmin as any;
+        const consumed = await db.rpc("consume_runner_token", {
+          p_jti: tokenPayload.jti,
+          p_user_id: tokenPayload.sub,
+        });
+        if (consumed.error) throw consumed.error;
+        if (!consumed.data?.ok) {
+          throw new ApiError(401, consumed.data?.code || "invalid_runner_token", consumed.data?.message || "Runner authorization is invalid.");
+        }
+      }
       const { requestedBlocks } = await readJson<{ requestedBlocks?: unknown }>(request);
       const count = Number(requestedBlocks);
       if (!Number.isInteger(count) || count < 1 || count > 1_000_000) {

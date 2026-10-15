@@ -164,11 +164,11 @@ function DownloadPage() {
             <LockKeyhole className="size-3.5" /> Account-protected downloads
           </div>
           <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-            One control center. <span className="text-gradient">Two game bridges.</span>
+            Download the desktop app. <span className="text-gradient">Build from there.</span>
           </h1>
           <p className="mt-4 max-w-2xl text-muted-foreground">
-            Sign in once, choose the package that matches your world, and let ZeroPulse verify each
-            build securely before the companion changes any blocks.
+            The Windows installer is the product. It includes the command center, local bridge, and
+            Minecraft Java builder. Account and billing stay on this website.
           </p>
         </div>
 
@@ -188,10 +188,10 @@ function DownloadPage() {
                 Primary
               </span>
             </div>
-            <h2 className="mt-5 font-display text-2xl font-semibold">PC / Java companion</h2>
+            <h2 className="mt-5 font-display text-2xl font-semibold">Windows desktop app</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              The Mineflayer automation runner for Minecraft Java LAN worlds and servers. The
-              Windows package includes its own runtime.
+              Installable ZeroPulse VoiceCraft application for Minecraft Java. The installer
+              bundles the desktop dashboard and local bridge. It does not include Minecraft.
             </p>
             <button
               onClick={() => void download("java")}
@@ -203,7 +203,7 @@ function DownloadPage() {
               ) : (
                 <Download className="size-4" />
               )}
-              Download Java companion
+              Download for Windows
             </button>
           </article>
 
@@ -213,25 +213,20 @@ function DownloadPage() {
                 <Gamepad2 className="size-6" />
               </span>
               <span className="rounded-full bg-accent/10 px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-accent">
-                Bedrock + console
+                Planned
               </span>
             </div>
-            <h2 className="mt-5 font-display text-2xl font-semibold">Bedrock Gateway kit</h2>
+            <h2 className="mt-5 font-display text-2xl font-semibold">Bedrock gateway</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              A configured Geyser/Floodgate gateway kit and setup scripts for Bedrock clients,
-              Xbox, PlayStation, and Nintendo Switch.
+              Native Bedrock automation is not included. Console access would depend on a separate
+              Geyser or Floodgate gateway, which is not shipped in this repository.
             </p>
             <button
-              onClick={() => void download("bedrock")}
-              disabled={Boolean(busy)}
-              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-accent/40 bg-accent/10 font-medium text-accent transition hover:bg-accent/20 disabled:opacity-50"
+              type="button"
+              disabled
+              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border font-medium text-muted-foreground"
             >
-              {busy === "download-bedrock" ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Download className="size-4" />
-              )}
-              Download Bedrock Gateway
+              Not available in this build
             </button>
           </article>
         </section>
@@ -359,10 +354,10 @@ function DownloadPage() {
           <h2 className="font-display text-xl font-semibold">Java quick start</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ["1", "Download", "Sign in and extract the complete Java companion ZIP."],
+              ["1", "Install", "Sign in and run the Windows installer. Shortcuts are created for you."],
               ["2", "Open LAN", "Enable cheats, open the Java world to LAN, and copy its port."],
-              ["3", "Pair", "Enter the LAN port and dashboard pairing code in the companion."],
-              ["4", "Build", "Wait for Connected, then speak or choose a quick action."],
+              ["3", "Connect", "Enter the host, port, and bot name in the desktop Connections section."],
+              ["4", "Approve", "Preview a command in Build Studio, then approve it before blocks change."],
             ].map(([number, title, body]) => (
               <div key={number}>
                 <span className="font-mono text-xs text-primary">{number}</span>

@@ -1,102 +1,55 @@
-# ZeroPulse Bridge
+# ZeroPulse bridge
 
-Local companion app. It hosts a WebSocket server for the ZeroPulse web dashboard and drives a
-[Mineflayer](https://github.com/PrismarineJS/mineflayer) bot that builds inside your Minecraft
-Java Edition world.
+The bridge is the local Minecraft Java companion. The desktop application starts it. It is not a public web dashboard.
 
-```
-Browser dashboard ──ws://localhost:8765──▶ bridge ──▶ Mineflayer bot ──▶ Minecraft
+```text
+Desktop app -- IPC --> Electron main -- authenticated WebSocket --> bridge --> Mineflayer --> Minecraft Java
 ```
 
 ## Requirements
 
-- Node.js 18+
-- Minecraft Java Edition 1.20+ (single-player world opened to LAN, or your own server)
-- Creative mode / operator permissions (the builder uses `/setblock`)
+- Node.js 22 or newer
+- Minecraft Java Edition
+- Creative mode, or operator rights with cheats enabled
 
-## Setup
+## Run from source
 
-```bash
+The desktop app generates `BRIDGE_AUTH_TOKEN` and passes it to the child process. A manual run has to do the same:
+
+```sh
+cd bridge
 npm install
-cp .env.example .env     # edit MC_HOST / MC_PORT / MC_USERNAME
+export BRIDGE_AUTH_TOKEN="$(openssl rand -hex 24)"
+export BRIDGE_HOST=127.0.0.1
+export MC_HOST=localhost
+export MC_PORT=25565
+export MC_USERNAME=ZeroPulse
 npm start
 ```
 
-In Minecraft: `Esc → Open to LAN → Allow cheats: ON → Start LAN World`, then copy the port from
-chat into `MC_PORT`. Restart the bridge and press **Connect bridge** in the dashboard.
+The process exits if `BRIDGE_AUTH_TOKEN` is missing or shorter than 24 characters. The default bind address is `127.0.0.1`. The first WebSocket message must be `{"type":"auth","token":"..."}`.
 
-## Files
+Copy `bridge/.env.example` when you want a file instead of exported variables. Do not commit the filled-in file.
 
-| File         | Purpose                                                              |
-| ------------ | -------------------------------------------------------------------- |
-| `index.js`   | WebSocket server, Mineflayer lifecycle, command dispatch, telemetry  |
-| `parser.js`  | Speech text → structured build instruction (mirrors the web parser)  |
-| `builder.js` | Procedural generators (mansion, castle, tower, pyramid, farm, …)     |
+## What the bridge will do
 
-## Protocol
+- Parse a command with `packages/protocol` and return a preview without placing blocks.
+- Place blocks only after an approved instruction and a valid runner token when `ZP_API_URL` is set.
+- Refuse the build when the account website cannot confirm an entitlement.
+- Stop a cancellation before later operations, and record a cancelled build as cancelled.
+- Keep in-game chat control off unless `MC_CHAT_CONTROL=1`. Chat still cannot approve a destructive action.
 
-Dashboard → bridge:
+## What it will not do
 
-```json
-{ "type": "command", "instruction": { "action": "build", "structure": "mansion", "...": "..." } }
+- Accept a short pairing code as permission to modify a world.
+- Pretend survival-mode placement works.
+- Import Sponge `.schem` or Litematica files. Those formats are rejected.
+- Automate Bedrock Edition. That companion is not in this repository.
+
+## Tests
+
+From the repository root:
+
+```sh
+npm test
 ```
-
-Bridge → dashboard:
-
-```json
-{ "type": "status",   "status": "building", "message": "Building large mansion" }
-{ "type": "progress", "progress": 62 }
-{ "type": "error",    "status": "error",   "message": "Bot not in world yet" }
-```
-
-## In-game commands
-
-You can also type orders directly into Minecraft chat:
-
-```
-zp build me a large stone mansion
-zp stop
-```
-
-## Adding your own structure
-
-Add a generator to `builder.js` returning `{ x, y, z, block }` in local coordinates, register it
-in `GENERATORS`, and add its keywords to `STRUCTURES` in `parser.js` (and in the web app's
-`src/lib/command-parser.ts`).
-
-## Placement modes
-
-On spawn the bridge probes for operator rights:
-
-- **command** — `/fill` + `/setblock` (fast, exact). Requires op / cheats.
-- **creative** — real hand placement: creative-inventory hotbar load, fly to the
-  target, `bot.placeBlock()` against a neighbouring face. Works without op.
-
-Override with `PLACEMENT_MODE=command|creative`. Use `DISABLE_FILL=1` on servers
-that block `/fill`. Builds are grounded on the terrain in front of the bot and the
-finish coordinates are chatted in-game and streamed back to the dashboard.
-
-## Structures
-
-house · mansion · tower · castle · pyramid · bridge · wall · farm · garden · fountain
-
-
-## Control it from your phone (relay mode)
-
-The bridge can dial out to the ZeroPulse relay instead of waiting for a LAN
-WebSocket, so a phone on mobile data can drive the bot running on your PC —
-no port forwarding.
-
-1. Open the dashboard, switch **Connection** to *Relay (anywhere)* and copy the
-   pairing code.
-2. Set `ZP_PAIR_CODE=<code>` in `bridge/.env` (or paste it into the companion
-   app's *Pairing code* field) and start the bridge.
-3. Speak. Commands travel dashboard → relay → bridge; progress, block counts
-   and world coordinates travel straight back.
-
-Everything is ephemeral broadcast — no build data is stored.
-
-## Structures
-
-house, mansion, tower, watchtower, castle, fortress, pyramid, bridge, wall,
-farm, garden, fountain.

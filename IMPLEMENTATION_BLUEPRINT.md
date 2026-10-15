@@ -1,18 +1,27 @@
 # ZeroPulse auth, billing, downloads, and licensing blueprint
 
+The current product architecture is documented in [docs/HANDOFF.md](docs/HANDOFF.md).
+The public `/dashboard` route redirects to `/get-started`. Minecraft control runs
+in the desktop application. `src/hooks/use-bridge.ts` and `desktop/main.cjs` have
+been removed. Apply both SQL migrations below; the second one is additive and
+does not change plan prices or existing subscription rows.
+
 ## Apply before deployment
 
 1. Apply supabase/migrations/202609010001_core_auth_billing_licenses.sql.
-2. In Supabase Auth, enable Email/Password, Google, and GitHub. Add the deployed
-   site URL and /dashboard callback URL to the redirect allowlist.
-3. Create three recurring Stripe prices and set the three STRIPE_PRICE
+2. Apply supabase/migrations/202610150001_desktop_auth_and_runner_replay.sql.
+3. In Supabase Auth, enable Email/Password, Google, and GitHub. Add the deployed
+   site URL and `/auth/callback` to the redirect allowlist. Desktop sign-in uses
+   `/auth/desktop` on that same site and a loopback redirect opened by the app.
+4. Create three recurring Stripe prices and set the three STRIPE_PRICE
    environment variables from .env.example.
-4. Register POST /api/billing/webhook in Stripe for these events:
+5. Register POST /api/billing/webhook in Stripe for these events:
    checkout.session.completed, customer.subscription.created,
    customer.subscription.updated, and customer.subscription.deleted.
-5. Create a private R2 bucket, upload both ZIPs, and configure the R2 variables.
-   R2 object URLs must not be public.
-6. Promote an administrator in the Supabase SQL editor:
+6. Create a private R2 bucket, upload both ZIPs, and configure the R2 variables.
+   R2 object URLs must not be public. The Windows installer produced by this
+   repository is unsigned until a code-signing certificate is configured.
+7. Promote an administrator in the Supabase SQL editor:
 
        update public.profiles
        set is_admin = true

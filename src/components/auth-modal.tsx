@@ -22,7 +22,7 @@ export function AuthModal() {
     const localHost = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
     const origin = localHost && configuredOrigin ? configuredOrigin : window.location.origin;
     const callback = new URL("/auth/callback", origin);
-    callback.searchParams.set("next", "/dashboard");
+    callback.searchParams.set("next", "/get-started");
     return callback.toString();
   };
 

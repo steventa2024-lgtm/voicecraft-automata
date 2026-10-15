@@ -7,7 +7,7 @@ import heroImage from "@/assets/hero-voxel.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ZeroPulse — Say It, Build It in Minecraft" },
+      { title: "ZeroPulse VoiceCraft — Speak it. Preview it. Build it." },
       {
         name: "description",
         content:
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Voice-controlled Minecraft automation: a futuristic dashboard plus a local Mineflayer bridge.",
+          "Voice-controlled Minecraft construction in a downloadable Windows desktop application.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -30,7 +30,7 @@ const PIPELINE = [
   {
     icon: Mic,
     title: "Speak",
-    body: "The browser captures your voice with the Web Speech API — “build me a large stone mansion”.",
+    body: "Talk or type inside the desktop app. Transcription stays on screen before anything is approved.",
   },
   {
     icon: Cpu,
@@ -40,7 +40,7 @@ const PIPELINE = [
   {
     icon: Boxes,
     title: "Build",
-    body: "Your local bridge drives a Mineflayer bot that lays every block procedurally, in real time.",
+    body: "After you approve the preview, the local bridge places the validated plan in Minecraft Java.",
   },
 ];
 
@@ -72,25 +72,25 @@ function Landing() {
               <Waves className="size-3.5" /> Voice automation for Minecraft Java
             </span>
             <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-              Say it. <span className="text-gradient">Watch it build.</span>
+              Speak it. Preview it. <span className="text-gradient">Build it.</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-              ZeroPulse listens to plain speech, turns it into structured build instructions, and
-              hands them to a Mineflayer bot running on your own machine. Mansions, castles and
-              towers — no scaffolding required.
+              ZeroPulse VoiceCraft is a Windows desktop application for Minecraft Java. Speak or
+              type a structure, inspect the block plan, and approve it before the local builder
+              changes the world.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/download"
                 className="glow-ring inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 font-medium text-primary-foreground transition hover:bg-primary-glow"
               >
-                <Download className="size-4" /> Download the bridge
+                <Download className="size-4" /> Download for Windows
               </Link>
               <Link
-                to="/dashboard"
+                to="/get-started"
                 className="inline-flex items-center gap-2 rounded-xl border border-border px-6 py-3.5 font-medium transition hover:bg-secondary"
               >
-                <Mic className="size-4" /> Try the dashboard
+                <Mic className="size-4" /> Installation guide
               </Link>
             </div>
             <p className="mt-4 font-mono text-xs text-muted-foreground">
@@ -151,15 +151,15 @@ function Landing() {
                   <Mic className="size-5" />
                 </span>
                 <div>
-                  <p className="text-sm font-medium">Listening…</p>
+                  <p className="text-sm font-medium">Example command</p>
                   <p className="font-mono text-xs text-primary">“build me a large stone mansion”</p>
                 </div>
               </div>
               <div className="mt-6 space-y-2 font-mono text-xs text-muted-foreground">
-                <p className="text-success">✓ bridge connected · ws://localhost:8765</p>
-                <p>→ structure: mansion · material: stone_bricks</p>
-                <p>→ footprint 31×23 · 2 floors · 4 812 blocks</p>
-                <p className="text-primary">▍placing walls… 62%</p>
+                <p>Illustration only — the app shows live status after you connect.</p>
+                <p>→ structure: mansion · material: stone bricks</p>
+                <p>→ preview, then explicit approval</p>
+                <p>→ placement progress comes from the local bridge</p>
               </div>
             </div>
             <div className="rounded-2xl border border-border/70 bg-background/50 p-6">
@@ -198,13 +198,13 @@ function Landing() {
             Your world is one sentence away
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Download the bridge, open your world to LAN, and start talking.
+            Install the desktop app, open your Java world to LAN, and approve the first preview.
           </p>
           <Link
             to="/download"
             className="mt-7 inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 font-medium text-primary-foreground transition hover:bg-primary-glow"
           >
-            <Download className="size-4" /> Get ZeroPulse Bridge
+            <Download className="size-4" /> Download for Windows
           </Link>
         </div>
       </section>
