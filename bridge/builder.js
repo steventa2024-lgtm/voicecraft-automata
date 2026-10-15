@@ -26,7 +26,7 @@ export function planInstruction(bot, instruction) {
     worldPosition(originInfo, block, instruction.rotation || 0, instruction.dimensions.width, instruction.dimensions.depth),
   );
   const site = surveyTerrain({
-    origin: originInfo,
+    origin: { ...originInfo, y: originInfo.y + plan.bounds.min.y },
     width: originInfo.footprint.width,
     depth: originInfo.footprint.depth,
     height: plan.bounds.height,

@@ -1,19 +1,27 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { theme as c } from "./theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { Glyph } from "./chrome";
 
 export function Card({ children }: { children: React.ReactNode }) {
   return <View style={styles.card}>{children}</View>;
 }
 
 export function Button({
-  title, onPress, disabled = false, secondary = false, danger = false,
+  title,
+  onPress,
+  disabled = false,
+  secondary = false,
+  danger = false,
+  icon,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
   secondary?: boolean;
   danger?: boolean;
+  icon?: string;
 }) {
   return (
     <Pressable
@@ -29,7 +37,19 @@ export function Button({
         pressed && { opacity: 0.75 },
       ]}
     >
-      <Text style={[styles.buttonText, secondary && { color: c.text }]}>{title}</Text>
+      <LinearGradient
+        colors={
+          secondary
+            ? ["#10243C", "#081629"]
+            : danger
+              ? ["#512738", "#321C2D"]
+              : ["#109EFF", "#0560DB"]
+        }
+        style={styles.buttonInner}
+      >
+        {icon ? <Glyph name={icon} color={secondary ? c.muted : "#EAF7FF"} size={19} /> : null}
+        <Text style={styles.buttonText}>{title}</Text>
+      </LinearGradient>
     </Pressable>
   );
 }
@@ -70,7 +90,9 @@ export function Footprint({ width, depth }: { width: number; depth: number }) {
           ))}
         </View>
       ))}
-      <Text style={styles.note}>Footprint of the validated plan. This is not a photograph of the world.</Text>
+      <Text style={styles.note}>
+        Footprint of the validated plan. This is not a photograph of the world.
+      </Text>
     </View>
   );
 }
@@ -84,22 +106,45 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 16,
   },
-  button: { backgroundColor: c.blueDeep, borderColor: "#6AABFF", borderRadius: 16, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 14 },
-  secondary: { backgroundColor: c.surfaceAlt },
-  danger: { backgroundColor: "#6d2430" },
+  button: {
+    backgroundColor: c.blueDeep,
+    borderColor: "#32B9FF",
+    borderRadius: 9,
+    borderWidth: 1,
+    overflow: "hidden",
+    minHeight: 44,
+  },
+  buttonInner: {
+    flexDirection: "row",
+    gap: 7,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    flex: 1,
+  },
+  secondary: { borderColor: c.border, backgroundColor: c.surfaceAlt },
+  danger: { borderColor: "#78384A" },
   disabled: { opacity: 0.45 },
-  buttonText: { color: "#fff", fontWeight: "700", textAlign: "center" },
+  buttonText: {
+    color: "#F3F6FC",
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+    flexShrink: 1,
+  },
   input: {
-    backgroundColor: "#0c1422",
+    backgroundColor: "#061323",
     borderColor: c.border,
-    borderRadius: 12,
+    borderRadius: 9,
     borderWidth: 1,
     color: c.text,
+    fontSize: 13,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
   multiline: { height: 110, textAlignVertical: "top" },
-  note: { color: c.muted, fontSize: 13, lineHeight: 19 },
+  note: { color: c.muted, fontSize: 11, lineHeight: 17 },
   status: { alignItems: "center", flexDirection: "row", gap: 8 },
   dot: { borderRadius: 5, height: 10, width: 10 },
   statusText: { color: c.text, fontSize: 14 },

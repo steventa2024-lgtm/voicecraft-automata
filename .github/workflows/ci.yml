@@ -35,3 +35,29 @@ jobs:
         working-directory: desktop
       - run: npm exec -- tsc -p tsconfig.json --noEmit
         working-directory: desktop
+
+  mobile-ui:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npx expo export --platform all --output-dir dist-validation
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://voicecraft-ui-fixture.supabase.co
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_visual_fixture_only
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: mobile-ui-test-results
+          path: mobile/test-results/

@@ -44,10 +44,10 @@ export function createBridgeRuntime(options) {
       yaw: player.yaw || 0,
       instruction: instruction.action === "clear" ? instruction : { ...instruction, action: "build" },
     });
-    const boundsError = worldBoundsError(origin.y, plan.bounds.height);
+    const boundsError = worldBoundsError(origin.y + plan.bounds.min.y, plan.bounds.height);
     const site = options.sampleBlock
       ? surveyTerrain({
-          origin,
+          origin: { ...origin, y: origin.y + plan.bounds.min.y },
           width: origin.footprint.width,
           depth: origin.footprint.depth,
           height: plan.bounds.height,
@@ -90,7 +90,7 @@ export function createBridgeRuntime(options) {
       emit({ type: "error", message: "The approved plan no longer matches the preview. Generate it again." });
       return { ok: false };
     }
-    if (job.boundsError || worldBoundsError(job.origin.y, job.plan.bounds.height)) {
+    if (job.boundsError || worldBoundsError(job.origin.y + job.plan.bounds.min.y, job.plan.bounds.height)) {
       emit({ type: "error", message: "The plan does not fit inside the world height." });
       return { ok: false };
     }

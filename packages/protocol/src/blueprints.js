@@ -29,6 +29,8 @@ const blueprintSchema = z
         accent: z.string().regex(/^[a-z0-9_]+$/).optional(),
         rotation: z.number().int().min(0).max(3).optional(),
         mirror: z.enum(["x", "z"]).nullable().optional(),
+        placement: z.enum(["ground", "floating"]).optional(),
+        elevation: z.number().int().min(0).max(16).optional(),
       })
       .optional(),
   })

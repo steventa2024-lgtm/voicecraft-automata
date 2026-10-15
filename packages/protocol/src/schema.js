@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { generateTemplate, templateById } from "./templates.js";
+import { parseCommand } from "./parser.js";
 import {
   ACTIONS,
   COMMAND_VERSION,
@@ -63,11 +65,76 @@ export const instructionSchema = z
  * Client-supplied approval is ignored unless the caller is the local authorized approver.
  */
 export function sanitizeInstruction(input, { allowApproved = false } = {}) {
+  if (input?.templateId) {
+    const templateInput = z
+      .object({
+        templateId: z
+          .string()
+          .max(80)
+          .refine((id) => Boolean(templateById(id))),
+        templateOptions: z
+          .object({
+            width: z.number().int().min(1).max(MAX_WIDTH).optional(),
+            depth: z.number().int().min(1).max(MAX_DEPTH).optional(),
+            floors: z.number().int().min(1).max(MAX_FLOORS).optional(),
+            material: z
+              .string()
+              .regex(/^[a-z0-9_]{1,60}$/)
+              .optional(),
+            accent: z
+              .string()
+              .regex(/^[a-z0-9_]{1,60}$/)
+              .optional(),
+            rotation: z.number().int().min(0).max(3).optional(),
+            mirror: z.enum(["x", "z"]).nullable().optional(),
+            placement: z.enum(["ground", "floating"]).optional(),
+            elevation: z.number().int().min(0).max(16).optional(),
+          })
+          .strict()
+          .default({}),
+        action: z.enum(["build", "preview", "inspect"]),
+      })
+      .safeParse(input);
+    if (!templateInput.success)
+      return { ok: false, errors: ["Invalid template or unsupported template options."] };
+    try {
+      const plan = generateTemplate(
+        templateInput.data.templateId,
+        templateInput.data.templateOptions,
+      );
+      const base = parseCommand("build a small stone house");
+      // All authority, placement coordinates and safety policy come from canonical defaults.
+      // Legacy desktop fields are descriptive only; client approval is never accepted here.
+      return {
+        ok: true,
+        instruction: {
+          ...base,
+          action: templateInput.data.action,
+          templateId: plan.templateId,
+          templateOptions: plan.settings,
+          dimensions: {
+            width: plan.bounds.width,
+            depth: plan.bounds.depth,
+            height: plan.bounds.height,
+          },
+          floors: plan.settings.floors,
+          raw: templateById(plan.templateId).name,
+          warnings: plan.warnings,
+          approved: false,
+          requiresConfirmation: true,
+        },
+      };
+    } catch (error) {
+      return { ok: false, errors: [error.message] };
+    }
+  }
   const parsed = instructionSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
-      errors: parsed.error.issues.map((issue) => `${issue.path.join(".") || "instruction"}: ${issue.message}`),
+      errors: parsed.error.issues.map(
+        (issue) => `${issue.path.join(".") || "instruction"}: ${issue.message}`,
+      ),
     };
   }
   const instruction = {
@@ -77,7 +144,10 @@ export function sanitizeInstruction(input, { allowApproved = false } = {}) {
   if (instruction.action === "build" && instruction.structure === "unknown") {
     return { ok: false, errors: ["Build instructions require a supported structure."] };
   }
-  if ((instruction.action === "build" || instruction.action === "clear") && instruction.dimensions.width < 1) {
+  if (
+    (instruction.action === "build" || instruction.action === "clear") &&
+    instruction.dimensions.width < 1
+  ) {
     return { ok: false, errors: ["Dimensions must be positive for this action."] };
   }
   return { ok: true, instruction };

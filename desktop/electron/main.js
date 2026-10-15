@@ -11,6 +11,7 @@ import { exportBlueprint, importBlueprint } from "../../packages/protocol/src/bl
 import { createPkce } from "../../packages/protocol/src/security.js";
 import { externalUrl, mergeSettings, publicSettings, scrubChildEnv, senderAllowed, validateInvoke } from "./policy.js";
 import { createCompanion } from "./companion.js";
+import { nextJobStatus } from "./job-status.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEV_PORT = Number(process.env.ZP_DESKTOP_PORT || 5173);
@@ -289,13 +290,7 @@ function connectBridge(port) {
         planWaiter = null;
         waiter(parsed);
       }
-      if (parsed.type === "progress" || parsed.status || parsed.type === "result") {
-        activeJob = {
-          status: parsed.status || parsed.type,
-          progress: typeof parsed.progress === "number" ? parsed.progress : null,
-          count: parsed.count || null,
-        };
-      }
+      activeJob = nextJobStatus(activeJob, parsed);
       send({ type: "bridge-event", event: parsed });
     } catch {
       send({ type: "log", message: "Ignored an unreadable bridge event." });

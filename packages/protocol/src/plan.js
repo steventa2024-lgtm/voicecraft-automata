@@ -126,7 +126,7 @@ export function buildPlan(instruction) {
 }
 
 export function assertPlanFitsWorld(originY, plan) {
-  const message = worldBoundsError(originY, plan.bounds.height);
+  const message = worldBoundsError(originY + (plan.bounds.min?.y || 0), plan.bounds.height);
   if (message) {
     const error = new Error(message);
     error.code = "world_bounds";

@@ -5,11 +5,15 @@ Expo app for iPhone and Android. It is the console companion. It does not place 
 ## What works in this tree
 
 - Email and password sign-in, account creation, password reset, and sign-out against the existing Supabase project once `mobile/.env` is filled in.
-- Five tabs: Home, Build, Console, Library, Settings.
+- Six tabs: Home, Build, Console, Library, Catalog and My PC. Settings is available from the branded header.
 - Push-to-talk recording. Audio is uploaded only after you stop. A transcript never approves a build.
 - Preview, explicit approval, cancel, and job polling against `services/cloud-api`.
-- Blueprint save, rename, duplicate, favorite, delete, and reuse. The library is empty until you save a real preview.
+- Local template blueprints can be edited, saved, reopened, renamed, duplicated, favorited and deleted. Cloud preview blueprints stay in the separate Cloud library.
+- Blueprint Studio renders the executable plan, supports effective template edits and raised placement, and requires matching PC preparation before explicit approval.
+- Private-network PC pairing, truthful connection/permission status and supported build controls. A phone cannot enable desktop permissions.
 - Console steps for PS5 and Xbox. Connection status comes from `GET /api/mobile/health`. The screen does not invent a connected server.
+
+See [redesign verification](../docs/MOBILE_REDESIGN.md) for actual application captures, comparisons against the approved designs, tests and remaining device/visual limitations.
 
 ## What is not verified
 

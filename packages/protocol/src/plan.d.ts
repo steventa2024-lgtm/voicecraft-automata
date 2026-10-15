@@ -6,4 +6,4 @@ export function buildPlan(instruction: unknown): {
 };
 
 export function planClear(instruction: unknown): Array<{ x: number; y: number; z: number; block: string }>;
-export function assertPlanFitsWorld(originY: number, plan: { bounds: { height: number } }): void;
+export function assertPlanFitsWorld(originY: number, plan: { bounds: { height: number; min?: { y: number } } }): void;

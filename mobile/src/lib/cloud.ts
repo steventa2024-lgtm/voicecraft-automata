@@ -98,7 +98,11 @@ async function accessToken(refresh: boolean) {
   return data.session.access_token;
 }
 
-async function authorized<T>(path: string, init: RequestInit & { timeout?: number } = {}, refresh = false): Promise<T> {
+async function authorized<T>(
+  path: string,
+  init: RequestInit & { timeout?: number } = {},
+  refresh = false,
+): Promise<T> {
   if (!cloudConfigured()) throw new Error("VoiceCraft Cloud API is not configured.");
   const token = await accessToken(refresh);
   const controller = new AbortController();
@@ -109,30 +113,47 @@ async function authorized<T>(path: string, init: RequestInit & { timeout?: numbe
     const response = await fetch(apiRoot() + path, { ...init, headers, signal: controller.signal });
     const payload = await response.json().catch(() => null);
     if (response.status === 401 && !refresh) return authorized<T>(path, init, true);
-    if (!response.ok) throw new Error(payload?.message || `Cloud request failed (HTTP ${response.status}).`);
+    if (!response.ok)
+      throw new Error(payload?.message || `Cloud request failed (HTTP ${response.status}).`);
     return payload as T;
   } finally {
     clearTimeout(timeout);
   }
 }
 
-export function fetchHealth() {
-  if (!cloudConfigured()) return Promise.reject(new Error("VoiceCraft Cloud API is not configured."));
-  return fetch(`${apiRoot()}/api/mobile/health`).then(async (response) => {
+export async function fetchHealth() {
+  if (!cloudConfigured())
+    return Promise.reject(new Error("VoiceCraft Cloud API is not configured."));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch(`${apiRoot()}/api/mobile/health`, { signal: controller.signal });
     const body = await response.json().catch(() => null);
     if (!response.ok) throw new Error(body?.message || "Cloud health check failed.");
+    if (
+      body?.api !== "ok" ||
+      !["not-configured", "tcp-open", "unreachable"].includes(body?.minecraft)
+    )
+      throw new Error("Invalid health response.");
     return body as CloudHealth;
-  });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
-export const fetchSession = () => authorized<CloudSession>("/api/mobile/session", { method: "GET" });
+export const fetchSession = () =>
+  authorized<CloudSession>("/api/mobile/session", { method: "GET" });
 export const claimPairing = (code: string, platform: ConsolePlatform) =>
-  authorized<{ worldId: string; worldName: string; platform: string; playerName: string }>("/api/mobile/pairing/claim", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ code, platform }),
-  });
-export const revokePairing = () => authorized<{ revoked: boolean }>("/api/mobile/pairing/revoke", { method: "POST" });
+  authorized<{ worldId: string; worldName: string; platform: string; playerName: string }>(
+    "/api/mobile/pairing/claim",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code, platform }),
+    },
+  );
+export const revokePairing = () =>
+  authorized<{ revoked: boolean }>("/api/mobile/pairing/revoke", { method: "POST" });
 export const requestPreview = (worldId: string, instruction: string) =>
   authorized<CloudPreview>("/api/mobile/builds/preview", {
     method: "POST",
@@ -145,10 +166,14 @@ export const confirmPreview = (previewId: string, idempotencyKey: string) =>
     headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
     body: JSON.stringify({ previewId }),
   });
-export const fetchJob = (jobId: string) => authorized<CloudJob>(`/api/mobile/builds/${jobId}`, { method: "GET" });
-export const cancelJob = (jobId: string) => authorized<CloudJob>(`/api/mobile/builds/${jobId}/cancel`, { method: "POST" });
-export const fetchHistory = () => authorized<{ jobs: CloudJob[] }>("/api/mobile/history", { method: "GET" });
-export const fetchBlueprints = () => authorized<{ blueprints: CloudBlueprint[] }>("/api/mobile/blueprints", { method: "GET" });
+export const fetchJob = (jobId: string) =>
+  authorized<CloudJob>(`/api/mobile/builds/${jobId}`, { method: "GET" });
+export const cancelJob = (jobId: string) =>
+  authorized<CloudJob>(`/api/mobile/builds/${jobId}/cancel`, { method: "POST" });
+export const fetchHistory = () =>
+  authorized<{ jobs: CloudJob[] }>("/api/mobile/history", { method: "GET" });
+export const fetchBlueprints = () =>
+  authorized<{ blueprints: CloudBlueprint[] }>("/api/mobile/blueprints", { method: "GET" });
 export const saveBlueprint = (previewId: string, name: string) =>
   authorized<{ id: string }>("/api/mobile/blueprints", {
     method: "POST",
@@ -177,7 +202,11 @@ export const previewBlueprint = (id: string) =>
 export async function transcribeAudio(uri: string): Promise<string> {
   const form = new FormData();
   form.append("audio", { uri, name: "voicecraft.m4a", type: "audio/mp4" } as unknown as Blob);
-  const payload = await authorized<{ text: string }>("/api/mobile/transcribe", { method: "POST", body: form, timeout: 30_000 });
+  const payload = await authorized<{ text: string }>("/api/mobile/transcribe", {
+    method: "POST",
+    body: form,
+    timeout: 30_000,
+  });
   if (typeof payload.text !== "string") throw new Error("Invalid transcription response.");
   return payload.text;
 }

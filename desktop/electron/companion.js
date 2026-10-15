@@ -162,6 +162,7 @@ export function createCompanion(options = {}) {
           return send(response, 409, { message: "That preview is stale. Generate it again." });
         }
         if (!options.bridgeRunning?.()) return send(response, 409, { message: "The Minecraft bridge is not running on this PC." });
+        session.lastFingerprint = null;
         const result = await options.approve?.(instruction, plan);
         return send(response, 200, result || { ok: true });
       }

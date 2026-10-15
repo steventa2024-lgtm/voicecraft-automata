@@ -1,76 +1,99 @@
 import React, { useId, useMemo } from "react";
-import { View } from "react-native";
-import Svg, { Circle, Defs, Ellipse, LinearGradient, Path, Rect, Stop } from "react-native-svg";
-import { generateTemplate, isometricPreview } from "../../packages/protocol/src/templates.js";
-
-type Block = { x: number; y: number; z: number; block: string };
-type Face = { points: Array<{ x: number; y: number }>; color: string; depth: number };
-
-const thumbCache = new Map<string, Block[]>();
-
+import { Image, View } from "react-native";
+import Svg, { Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from "react-native-svg";
+import { generateTemplate } from "../../packages/protocol/src/templates.js";
+import { voxelScene, materialColor } from "./lib/voxel-scene.js";
+import { thumbnails } from "./thumbnails";
+export type Block = { x: number; y: number; z: number; block: string };
+const cache = new Map<string, Block[]>();
 export function defaultBlocks(id: string) {
-  const cached = thumbCache.get(id);
-  if (cached) return cached;
-  const blocks = generateTemplate(id).blocks as Block[];
-  thumbCache.set(id, blocks);
-  return blocks;
+  if (!cache.has(id)) cache.set(id, generateTemplate(id).blocks);
+  return cache.get(id)!;
 }
-
-const STARS = [
-  [0.14, 0.16],
-  [0.28, 0.08],
-  [0.46, 0.18],
-  [0.63, 0.07],
-  [0.82, 0.2],
-  [0.9, 0.1],
-];
-
-function batches(faces: Face[]) {
-  const groups: Array<{ color: string; d: string }> = [];
-  for (const face of faces) {
-    const command = face.points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ") + " Z";
-    const last = groups[groups.length - 1];
-    if (last && last.color === face.color) last.d += ` ${command}`;
-    else groups.push({ color: face.color, d: command });
-  }
-  return groups;
+export function TemplateThumbnail({
+  id,
+  width,
+  height,
+}: {
+  id: string;
+  width: number;
+  height: number;
+}) {
+  return (
+    <Image
+      accessibilityLabel="Preview of the executable block plan"
+      source={thumbnails[id]}
+      resizeMode="cover"
+      style={{ width, height }}
+    />
+  );
 }
-
 export const StructureArt = React.memo(function StructureArt({
   blocks,
   width,
   height,
-  rounded = 18,
+  rounded = 10,
+  camera = 2,
+  zoom = 1,
+  grid = true,
 }: {
   blocks: Block[];
   width: number;
   height: number;
   rounded?: number;
+  camera?: number;
+  zoom?: number;
+  grid?: boolean;
 }) {
-  const gradientId = useId().replace(/[^a-zA-Z0-9]/g, "");
-  const preview = useMemo(() => isometricPreview(blocks, Math.max(1, width), Math.max(1, height)) as { width: number; height: number; faces: Face[] }, [blocks, width, height]);
-  const drawn = useMemo(() => batches(preview.faces), [preview]);
+  const id = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const scene = useMemo(
+    () => voxelScene(blocks, width, height, camera, zoom),
+    [blocks, width, height, camera, zoom],
+  );
   return (
-    <View style={{ width, height, borderRadius: rounded, overflow: "hidden", backgroundColor: "#07111f" }}>
-      <Svg width={width} height={height}>
+    <View
+      accessibilityLabel={"Plan preview: " + scene.visibleBlocks + " solid blocks"}
+      style={{
+        width,
+        height,
+        borderRadius: rounded,
+        overflow: "hidden",
+        backgroundColor: "#071426",
+      }}
+    >
+      <Svg width={width} height={height} viewBox={"0 0 " + width + " " + height}>
         <Defs>
-          <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#07111f" />
-            <Stop offset="0.42" stopColor="#12315f" />
-            <Stop offset="0.78" stopColor="#1c4d62" />
-            <Stop offset="1" stopColor="#10281c" />
-          </LinearGradient>
+          <RadialGradient id={id} cx="50%" cy="55%" rx="75%" ry="65%">
+            <Stop offset="0" stopColor="#214c69" />
+            <Stop offset="1" stopColor="#071426" />
+          </RadialGradient>
         </Defs>
-        <Rect width={width} height={height} fill={`url(#${gradientId})`} />
-        {STARS.map(([x, y]) => (
-          <Circle key={`${x}-${y}`} cx={width * x} cy={height * y} r={1.2} fill="#d5e6ff" opacity={0.8} />
-        ))}
-        <Circle cx={width * 0.78} cy={height * 0.16} r={Math.max(6, Math.min(width, height) * 0.055)} fill="#e7f1ff" />
-        <Ellipse cx={width / 2} cy={height * 0.9} rx={width * 0.36} ry={Math.max(6, height * 0.07)} fill="#07140e" opacity={0.72} />
-        {drawn.map((group, index) => (
-          <Path key={`${group.color}-${index}`} d={group.d} fill={group.color} stroke="rgba(5,10,18,0.35)" strokeWidth={0.45} />
+        <Rect width={width} height={height} fill={"url(#" + id + ")"} />
+        <Path d={scene.ground} fill="#102d36" stroke="#285169" strokeWidth={0.7} />
+        {grid ? <Path d={scene.grid} fill="none" stroke="#315061" strokeWidth={0.5} /> : null}
+        {scene.paths.map((p: { d: string; color: string }, i: number) => (
+          <Path key={i} d={p.d} fill={p.color} />
         ))}
       </Svg>
     </View>
   );
 });
+export function MaterialCube({ material, size = 28 }: { material: string; size?: number }) {
+  const color = materialColor(material);
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 36">
+      <Path d="M16 1 30 9 16 17 2 9Z" fill={color} />
+      <Path d="M2 9 16 17v17L2 26Z" fill={color} />
+      <Path d="m16 17 14-8v17l-14 8Z" fill={color} />
+      <Path d="m16 17 14-8v17l-14 8Z" fill="#000" opacity={0.25} />
+      <Path d="M16 1 30 9 16 17 2 9Z" fill="#fff" opacity={0.15} />
+      <Path
+        d="m2 14 14 8 14-8M2 20l14 8 14-8M9 13v6m14-6v6M9 25v5m14-5v5M9 5l14 8M9 13l14-8"
+        fill="none"
+        stroke="#000"
+        strokeWidth={0.5}
+        opacity={0.28}
+      />
+    </Svg>
+  );
+}

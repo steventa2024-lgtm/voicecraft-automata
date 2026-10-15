@@ -707,6 +707,12 @@ export function generateTemplate(id, options = {}) {
   if (mirror) blocks = dedupe(mirrorBlocks(blocks, mirror));
   const rotation = clamp(options.rotation, 0, 3, 0);
   if (rotation) blocks = dedupe(rotateBlocks(blocks, rotation));
+  const placement = options.placement ?? "ground";
+  if (!["ground", "floating"].includes(placement)) {
+    throw new Error("Water-surface placement is not supported. Choose ground or a vertical offset.");
+  }
+  const elevation = placement === "floating" ? clamp(options.elevation, 1, 16, 4) : 0;
+  if (elevation) blocks = blocks.map((block) => ({ ...block, y: block.y + elevation }));
   const bounds = boundsOf(blocks);
   return {
     templateId: id,
@@ -715,8 +721,8 @@ export function generateTemplate(id, options = {}) {
     count: blocks.length,
     bounds,
     fingerprint: planFingerprint(blocks),
-    warnings: row[10],
-    settings: { width, depth, floors, material, accent: options.accent || "stone_bricks", rotation, mirror },
+    warnings: [...row[10], ...(elevation ? [`Raised ${elevation} blocks from the normal placement origin. Supports are not added.`] : [])],
+    settings: { width, depth, floors, material, accent: options.accent || "stone_bricks", rotation, mirror, placement, elevation },
   };
 }
 

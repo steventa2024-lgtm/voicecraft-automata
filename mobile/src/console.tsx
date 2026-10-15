@@ -1,160 +1,370 @@
-import React from "react";
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
-import { GlowCard, ScreenHero } from "./chrome";
+import React, { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import * as Clipboard from "expo-clipboard";
+import { GlowCard, Glyph, ScreenHero, SectionTitle, StatusPill } from "./chrome";
 import type { CloudHealth, CloudSession, ConsolePlatform } from "./lib/cloud";
+import { MaterialCube } from "./preview";
 import { theme as c } from "./theme";
-import { Button, Field, Note } from "./ui";
-
-export function ConsoleScreen({
-  platform,
-  onPlatform,
-  health,
-  busy,
-  onCheck,
-  pairCode,
-  onCode,
-  onPair,
-  cloud,
-  onUnpair,
-  onBell,
-}: {
+import { Button, Field } from "./ui";
+type Props = {
   platform: ConsolePlatform;
-  onPlatform: (platform: ConsolePlatform) => void;
+  onPlatform: (p: ConsolePlatform) => void;
   health: CloudHealth | null;
   busy: boolean;
   onCheck: () => void;
   pairCode: string;
-  onCode: (value: string) => void;
+  onCode: (s: string) => void;
   onPair: () => void;
   cloud: CloudSession | null;
   onUnpair: () => void;
   onBell: () => void;
-}) {
-  const bedrock = health?.bedrock || null;
-  const apiReady = health?.api === "ok";
-  const hostReady = health?.minecraft === "tcp-open";
-  const allReady = Boolean(apiReady && hostReady && bedrock);
-  const address = bedrock ? `${bedrock.host}` : "Not published";
-
+  configured: boolean;
+};
+export function ConsoleScreen(p: Props) {
+  const [copied, setCopied] = useState(false),
+    [copyError, setCopyError] = useState("");
+  const bedrock = p.health?.bedrock,
+    api = p.health?.api === "ok",
+    host = p.health?.minecraft === "tcp-open";
+  const selected = p.platform === "ps5" ? "PlayStation 5" : "Xbox";
   return (
-    <ScrollView contentContainerStyle={styles.page}>
-      <ScreenHero compact subtitle={"Connect. Speak. Build together.\nVoice-powered Minecraft, everywhere."} onBell={onBell} />
-      <View style={styles.body}>
-        <Text style={styles.title}>Console Connection</Text>
-        <Text style={styles.meta}>Connect your console to start voice building</Text>
-        <View style={styles.row}>
-          <Pressable onPress={() => onPlatform("ps5")} style={[styles.platform, platform === "ps5" && styles.platformOn]}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.platformTitle} numberOfLines={1}>PlayStation 5</Text>
-              <View style={[styles.radio, platform === "ps5" && styles.radioOn]} />
-            </View>
-            <Text style={platform === "ps5" ? styles.good : styles.meta}>{platform === "ps5" ? "Selected" : "Not selected"}</Text>
-          </Pressable>
-          <Pressable onPress={() => onPlatform("xbox")} style={[styles.platform, platform === "xbox" && styles.platformOn]}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.platformTitle} numberOfLines={1}>Xbox</Text>
-              <View style={[styles.radio, platform === "xbox" && styles.radioOn]} />
-            </View>
-            <Text style={platform === "xbox" ? styles.good : styles.meta}>{platform === "xbox" ? "Selected" : "Not selected"}</Text>
-          </Pressable>
+    <ScrollView
+      contentContainerStyle={s.page}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <ScreenHero
+        subtitle={"Connect. Speak. Build Together.\nVoice-powered Minecraft, everywhere."}
+        onBell={p.onBell}
+      />
+      <View style={s.body}>
+        <SectionTitle
+          icon="controller"
+          title="Console Connection"
+          detail="Connect your console to start voice building"
+        />
+        <View style={s.row}>
+          {(["ps5", "xbox"] as const).map((platform) => (
+            <Pressable
+              key={platform}
+              accessibilityRole="radio"
+              accessibilityLabel={platform === "ps5" ? "PlayStation 5" : "Xbox"}
+              aria-checked={p.platform === platform}
+              accessibilityState={{ checked: p.platform === platform }}
+              onPress={() => p.onPlatform(platform)}
+              style={[s.platform, p.platform === platform && s.platformOn]}
+            >
+              <View
+                style={[
+                  s.consoleIcon,
+                  platform === "xbox" && { backgroundColor: "#064B3B", borderColor: "#148263" },
+                ]}
+              >
+                <Text style={s.consoleMark}>{platform === "ps5" ? "PS" : "X"}</Text>
+              </View>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={s.platformTitle}>{platform === "ps5" ? "PlayStation 5" : "Xbox"}</Text>
+                <Text style={[s.small, p.platform === platform && { color: c.success }]}>
+                  {p.platform === platform ? "● Selected" : "● Not selected"}
+                </Text>
+              </View>
+              <View
+                style={[
+                  s.radio,
+                  p.platform === platform && { borderColor: c.blue, backgroundColor: "#079EFF" },
+                ]}
+              />
+            </Pressable>
+          ))}
         </View>
-
         <GlowCard>
-          <View style={styles.rowBetween}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.section}>Cloud & Server Status</Text>
-              <Text style={styles.meta}>Values come from the last health check.</Text>
-            </View>
-            <Text style={allReady ? styles.good : styles.warn}>{allReady ? "Reported ready" : "Not fully ready"}</Text>
+          <View style={s.rowBetween}>
+            <SectionTitle icon="cloud" title="Cloud & Server Status" />
+            <StatusPill
+              label={api && host && bedrock ? "Reported ready" : "Setup required"}
+              good={Boolean(api && host && bedrock)}
+            />
           </View>
-          <View style={styles.row}>
-            <Mini title="Cloud API" value={health ? (apiReady ? "Reachable" : health.api) : "Not checked"} detail="API health" good={apiReady} />
-            <Mini title="Minecraft Host" value={health ? health.minecraft : "Not checked"} detail={hostReady ? "TCP open" : "Not confirmed"} good={hostReady} />
-            <Mini title="Bedrock Gateway" value={bedrock ? "Published" : "Not published"} detail={bedrock ? bedrock.probe : "No address yet"} good={Boolean(bedrock)} />
+          <Text style={s.small}>Status from your latest connection check</Text>
+          <View style={s.row}>
+            <Service
+              icon="cloud"
+              title="Cloud API"
+              value={api ? "Connected" : p.configured ? "Unavailable" : "Not configured"}
+              detail={api ? "API responding" : "Choose a server"}
+              good={api}
+            />
+            <Service
+              icon="world"
+              title="Minecraft Host"
+              value={
+                host
+                  ? "Reachable"
+                  : p.health?.minecraft === "unreachable"
+                    ? "Unreachable"
+                    : "Not configured"
+              }
+              detail={host ? "TCP port open" : "Not confirmed"}
+              good={host}
+            />
+            <Service
+              icon="cube"
+              title="Bedrock Gateway"
+              value={bedrock ? "Published" : "Not published"}
+              detail={bedrock ? "Address available" : "No address yet"}
+              good={Boolean(bedrock)}
+            />
           </View>
-          <Button title={busy ? "Checking" : "Check cloud"} secondary disabled={busy} onPress={onCheck} />
+          <Button
+            icon="refresh"
+            title={p.busy ? "Checking…" : "Check connection"}
+            secondary
+            disabled={p.busy || !p.configured}
+            onPress={p.onCheck}
+          />
+          {!p.configured ? (
+            <Pressable accessibilityRole="button" onPress={p.onBell}>
+              <Text style={s.link}>Configure your API in Settings ›</Text>
+            </Pressable>
+          ) : null}
         </GlowCard>
-
         <GlowCard>
-          <View style={styles.rowBetween}>
+          <View style={s.rowBetween}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.section}>Your Bedrock Server Address</Text>
-              <Text style={styles.meta}>Use this on {platform === "ps5" ? "PS5" : "Xbox"} only when an address is published.</Text>
+              <SectionTitle
+                icon="cube"
+                title="Your Bedrock Server Address"
+                detail={"Use this address on your " + selected + " to join."}
+              />
             </View>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Copy server address"
+              accessibilityState={{ disabled: !bedrock }}
               disabled={!bedrock}
-              onPress={() => bedrock && void Share.share({ message: `${bedrock.host}:${bedrock.port}` })}
+              onPress={() => {
+                if (bedrock)
+                  void Clipboard.setStringAsync(bedrock.host + ":" + bedrock.port)
+                    .then(() => {
+                      setCopied(true);
+                      setCopyError("");
+                    })
+                    .catch(() => setCopyError("Copy unavailable. Select the address below."));
+              }}
+              style={[s.copy, !bedrock && { opacity: 0.35 }]}
             >
-              <Text style={[styles.link, !bedrock && { opacity: 0.4 }]}>Copy</Text>
+              <Glyph name="copy" size={14} />
+              <Text style={s.link}>{copied ? "Copied" : "Copy"}</Text>
             </Pressable>
           </View>
-          <View style={styles.addressRow}>
-            <Text style={styles.address}>{address}</Text>
-            <Text style={styles.port}>Port {bedrock ? bedrock.port : "—"}</Text>
+          <View style={s.address}>
+            <Text selectable style={s.addressText}>
+              {bedrock?.host || "Not published"}
+            </Text>
+            <View style={s.port}>
+              <Text style={s.small}>Port</Text>
+              <Text selectable style={s.addressText}>
+                {bedrock?.port ?? "—"}
+              </Text>
+            </View>
+          </View>
+          {copyError ? <Text style={s.small}>{copyError}</Text> : null}
+        </GlowCard>
+        <GlowCard>
+          <SectionTitle
+            icon="link"
+            title={"Pair Your " + selected + " Account"}
+            detail="Link your player to enable VoiceCraft on this console."
+          />
+          <Step n={1} text="Join the published VoiceCraft server from your console." />
+          <Step n={2} text="In world chat, type vc pair to receive a one-time code." />
+          <Step n={3} text="Enter the 8-character code below to link your player." />
+          <View style={s.pairRow}>
+            <Field
+              value={p.pairCode}
+              onChangeText={(value) => p.onCode(value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+              maxLength={8}
+              autoCapitalize="characters"
+              placeholder="8-character code"
+              accessibilityLabel="Console pairing code"
+              style={{ flex: 1, minWidth: 110, letterSpacing: 2 }}
+            />
+            <View style={{ flex: 1, minWidth: 130 }}>
+              <Button
+                icon="link"
+                title="Link this player"
+                disabled={p.busy || !p.configured || !bedrock || p.pairCode.trim().length !== 8}
+                onPress={p.onPair}
+              />
+            </View>
+          </View>
+          <View style={s.warning}>
+            <Glyph name="warning" color={c.warning} size={22} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={s.warnTitle}>Important Note</Text>
+              <Text style={s.small}>
+                VoiceCraft does not connect to an existing single-player world or Realm. Join the
+                published VoiceCraft server to use voice building.
+              </Text>
+            </View>
           </View>
         </GlowCard>
-
-        <GlowCard>
-          <Text style={styles.section}>Pair your {platform === "ps5" ? "PlayStation 5" : "Xbox"} account</Text>
-          <Text style={styles.meta}>Link your player to enable VoiceCraft on this console.</Text>
-          <Text style={styles.step}>1. Join the published server from the console. VoiceCraft does not join a Realm for you.</Text>
-          <Text style={styles.step}>2. In that world, type vc pair and read the code in chat.</Text>
-          <Text style={styles.step}>3. Enter the 8-character code here. The code does not approve a build.</Text>
-          <Field value={pairCode} onChangeText={onCode} autoCapitalize="characters" placeholder="8-character code" accessibilityLabel="Pairing code" />
-          <Button title="Link this player" disabled={busy} onPress={onPair} />
-        </GlowCard>
-
-        {cloud?.link ? (
+        {p.cloud?.link ? (
           <GlowCard>
-            <Text style={styles.section}>Linked</Text>
-            <Note>{cloud.link.playerName} on {cloud.link.platform} · {cloud.link.worldName}</Note>
-            <Note>{cloud.link.bedrock ? "The server reported a Bedrock player id. PlayStation or Xbox is the choice you made here." : "The server did not report a Bedrock player id."}</Note>
-            <Button title="Unpair" danger onPress={onUnpair} />
+            <SectionTitle
+              icon="check"
+              title="Player linked"
+              detail={p.cloud.link.playerName + " · " + p.cloud.link.worldName}
+            />
+            <Text style={s.small}>
+              Selected console: {p.cloud.link.platform}. Pairing does not approve a build.
+            </Text>
+            <Button title="Unpair player" danger disabled={p.busy} onPress={p.onUnpair} />
           </GlowCard>
         ) : null}
-
-        <View style={styles.warning}>
-          <Text style={styles.warnTitle}>Important note</Text>
-          <Text style={styles.warnBody}>VoiceCraft does not connect to an existing single-player world or Realm. You must join the VoiceCraft server shown above to use voice building.</Text>
-        </View>
       </View>
     </ScrollView>
   );
 }
-
-function Mini({ title, value, detail, good }: { title: string; value: string; detail: string; good: boolean }) {
+function Service({
+  icon,
+  title,
+  value,
+  detail,
+  good,
+}: {
+  icon: string;
+  title: string;
+  value: string;
+  detail: string;
+  good: boolean;
+}) {
   return (
-    <View style={styles.mini}>
-      <Text style={styles.meta}>{title}</Text>
-      <Text style={styles.miniValue}>{value}</Text>
-      <Text style={good ? styles.good : styles.meta}>{detail}</Text>
+    <View style={[s.service, good && { borderColor: "#146A9B" }]}>
+      {icon === "world" ? (
+        <MaterialCube material="grass_block" size={30} />
+      ) : (
+        <Glyph name={icon} size={31} color={good ? c.blue : "#57708D"} />
+      )}
+      <Text style={s.serviceTitle}>{title}</Text>
+      <Text style={[s.serviceValue, { color: good ? c.success : c.muted }]}>
+        {good ? "● " : ""}
+        {value}
+      </Text>
+      <Text style={s.micro}>{detail}</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  page: { paddingBottom: 24 },
-  body: { gap: 12, padding: 16 },
-  title: { color: c.text, fontSize: 26, fontWeight: "800" },
-  section: { color: c.text, fontSize: 16, fontWeight: "800" },
-  meta: { color: c.muted, fontSize: 12, lineHeight: 17 },
-  good: { color: c.success, fontSize: 12, fontWeight: "700" },
-  warn: { color: c.warning, fontSize: 12, fontWeight: "700" },
-  row: { flexDirection: "row", gap: 8 },
-  rowBetween: { alignItems: "flex-start", flexDirection: "row", gap: 8, justifyContent: "space-between" },
-  platform: { borderColor: "#24558F", borderRadius: 16, borderWidth: 1, flex: 1, gap: 4, padding: 14 },
-  platformOn: { borderColor: c.blue, backgroundColor: "#10284A" },
-  platformTitle: { color: c.text, flex: 1, fontSize: 15, fontWeight: "800" },
-  radio: { borderColor: "#6E86A8", borderRadius: 9, borderWidth: 2, height: 18, width: 18 },
-  radioOn: { backgroundColor: c.blue, borderColor: "#D7E9FF" },
-  mini: { backgroundColor: "#0A162C", borderRadius: 14, flex: 1, gap: 4, padding: 8 },
-  miniValue: { color: c.text, fontSize: 12, fontWeight: "800" },
-  addressRow: { alignItems: "center", backgroundColor: "#081426", borderRadius: 12, flexDirection: "row", justifyContent: "space-between", padding: 12 },
-  address: { color: c.text, flex: 1, fontSize: 16, fontWeight: "700" },
-  port: { color: c.muted, fontWeight: "700" },
-  link: { color: c.blue, fontWeight: "800" },
-  step: { color: c.text, fontSize: 13, lineHeight: 18 },
-  warning: { backgroundColor: "#2A220C", borderColor: "#8A6A22", borderRadius: 16, borderWidth: 1, gap: 4, padding: 14 },
-  warnTitle: { color: c.warning, fontWeight: "800" },
-  warnBody: { color: "#F3E2B0", fontSize: 13, lineHeight: 18 },
+function Step({ n, text }: { n: number; text: string }) {
+  return (
+    <View style={s.row}>
+      <View style={s.number}>
+        <Text style={s.stepNumber}>{n}</Text>
+      </View>
+      <Text style={[s.small, { flex: 1 }]}>{text}</Text>
+    </View>
+  );
+}
+const s = StyleSheet.create({
+  page: { paddingBottom: 18 },
+  body: { paddingHorizontal: 12, gap: 11 },
+  row: { flexDirection: "row", alignItems: "center", gap: 7 },
+  rowBetween: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 5,
+  },
+  small: { color: c.muted, fontSize: 10, lineHeight: 15 },
+  micro: { color: c.muted, fontSize: 8, lineHeight: 12, textAlign: "center" },
+  platform: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 9,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 11,
+    minHeight: 67,
+    backgroundColor: "#091B30",
+  },
+  platformOn: { borderColor: c.blue, backgroundColor: "#073365", boxShadow: "0 0 8px #1DBAFF44" },
+  consoleIcon: {
+    width: 40,
+    height: 45,
+    borderRadius: 9,
+    backgroundColor: "#0754AD",
+    borderColor: "#2795E4",
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  consoleMark: { fontSize: 24, color: "#FFF", fontWeight: "900", fontStyle: "italic" },
+  platformTitle: { fontSize: 12, color: c.text, fontWeight: "600" },
+  radio: { height: 15, width: 15, borderWidth: 1.5, borderRadius: 8, borderColor: "#627D9E" },
+  service: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#071B32",
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 9,
+    paddingHorizontal: 3,
+    paddingVertical: 11,
+    gap: 5,
+    minHeight: 108,
+  },
+  serviceTitle: { color: c.text, fontSize: 9, fontWeight: "600", textAlign: "center" },
+  serviceValue: { fontSize: 9, fontWeight: "600", textAlign: "center" },
+  link: { color: c.blue, fontSize: 10 },
+  copy: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    padding: 7,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 8,
+  },
+  address: {
+    backgroundColor: "#040F1F",
+    borderRadius: 9,
+    borderColor: c.border,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    gap: 8,
+  },
+  addressText: { fontFamily: "monospace", color: c.text, fontSize: 13, flexShrink: 1 },
+  port: {
+    marginLeft: "auto",
+    borderLeftWidth: 1,
+    borderLeftColor: c.border,
+    paddingLeft: 12,
+    gap: 3,
+  },
+  number: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    backgroundColor: "#0788EF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepNumber: { color: "#FFF", fontSize: 11, fontWeight: "700" },
+  pairRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  warning: {
+    flexDirection: "row",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#7E6B38",
+    backgroundColor: "#29271366",
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 3,
+  },
+  warnTitle: { color: c.warning, fontSize: 11, fontWeight: "700" },
 });
