@@ -1,5 +1,7 @@
 # VoiceCraft mobile and cloud
 
+**Zero-cost requirement:** Development, mobile testing, local API, and optional self-hosted Minecraft testing must not require any new paid service. The owner is willing to pay only for the Apple Developer Program when needed for iOS distribution. Read [ZERO_COST_POLICY.md](./ZERO_COST_POLICY.md) before suggesting hosting, paid AI APIs, subscriptions, or deployment.
+
 This continues `feature/voicecraft-mobile-companion` (pull request #2) on top of the desktop branch. The phone is the controller. A hosted Minecraft world is the only place blocks change. Console players are not asked to install the desktop app.
 
 ## Architecture
@@ -64,7 +66,7 @@ If `OLLAMA_URL` is a localhost URL and `OLLAMA_MODEL` is set, an unrecognized se
 
 Smallest test host: 2 vCPU, 4 GB RAM, 20 GB disk for the API and worker without a model. Add 2 GB RAM for the Paper world. A local Whisper or Ollama model needs more RAM than a phone-class box; run those on the same VPS only if you choose a small model. Do not buy a server from this repository's scripts.
 
-Expected monthly cost if you rent it yourself: a small VPS is often about $5–$20 before Minecraft uptime and backups. That is a market range, not a quote. No server was rented here.
+**Project-owner budget is $0 for new hosting. Do not recommend or provision a rented VPS for this development milestone.** Use the existing PC for local testing, and support authorized third-party/community/self-hosted Minecraft servers for console users who have no computer. Always-on operation requires somebody's hardware, electricity and connectivity; the mobile app cannot guarantee free 24/7 compute. No server was rented here.
 
 `infra/docker/docker-compose.yml` publishes the API on `127.0.0.1:8787` and, only with `--profile minecraft`, UDP 19132. Set `EULA=TRUE` yourself. RCON is off. Put Caddy or nginx with HTTPS in front before any phone build that is not a development client.
 
