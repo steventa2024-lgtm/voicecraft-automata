@@ -6,7 +6,7 @@ export const Route = createFileRoute("/api/builder/token")({
   server: { handlers: { POST: async ({ request }) => {
     try {
       const user = await requireApiUser(request);
-      return Response.json(issueRunnerToken(user.id));
+      return Response.json(await issueRunnerToken(user.id));
     } catch (error) {
       return errorResponse(error);
     }

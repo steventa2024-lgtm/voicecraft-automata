@@ -14,7 +14,10 @@ export const Route = createFileRoute("/auth/callback")({
 });
 
 function safeNext(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value === "/dashboard") {
+    return "/get-started";
+  }
+  return value;
 }
 
 function AuthCallbackPage() {
@@ -111,7 +114,7 @@ function AuthCallbackPage() {
           <>
             <CheckCircle2 className="mx-auto size-10 text-success" />
             <h1 className="mt-4 font-display text-2xl font-semibold">You are signed in</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Opening your dashboard…</p>
+            <p className="mt-2 text-sm text-muted-foreground">Returning to your account…</p>
           </>
         ) : (
           <>

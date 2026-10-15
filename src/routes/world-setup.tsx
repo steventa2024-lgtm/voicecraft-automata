@@ -139,7 +139,7 @@ function WorldSetup() {
             items={[
               "Run the ZeroPulse companion on that PC",
               "Paste the config below into its settings",
-              "Open the dashboard and pick Relay mode",
+              "Approve a paired device inside the desktop app. A pairing code alone cannot build.",
               "Enter the same pairing code, then speak",
             ]}
           />
@@ -178,7 +178,7 @@ function WorldSetup() {
               label="Pairing code"
               value={cfg.code}
               onChange={(v) => update({ code: normalizeCode(v) })}
-              hint="links dashboard ↔ bridge over the relay"
+              hint="optional paired companion, approved in the desktop app"
             />
           </div>
 
@@ -203,7 +203,7 @@ function WorldSetup() {
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             With a pairing code set, the bridge dials out to the ZeroPulse relay — no port
-            forwarding — so your phone can drive the bot from anywhere.
+            forwarding. Remote proposals still wait for approval on the desktop, which remains the only build host.
           </p>
         </section>
       </main>

@@ -1,12 +1,58 @@
 {
-  "name": "zeropulse-companion",
-  "productName": "ZeroPulse Companion",
-  "version": "1.0.0",
+  "name": "zeropulse-voicecraft",
+  "productName": "ZeroPulse VoiceCraft",
+  "version": "2.0.0",
   "private": true,
-  "description": "Desktop companion that runs the ZeroPulse bridge and drives your Minecraft bot.",
-  "main": "main.cjs",
+  "description": "Desktop command center for ZeroPulse Minecraft Java automation.",
   "author": "ZeroPulse",
+  "main": "electron/main.js",
+  "type": "module",
   "scripts": {
-    "start": "electron ."
+    "dev": "ZP_DESKTOP_DEV=1 vite",
+    "build": "vite build",
+    "start": "electron .",
+    "package:win": "npm run build && electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "dev.zeropulse.voicecraft",
+    "productName": "ZeroPulse VoiceCraft",
+    "artifactName": "ZeroPulse-VoiceCraft-Setup-${version}.${ext}",
+    "directories": { "output": "../dist-desktop" },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "../bridge", "to": "bridge", "filter": ["**/*", "!*.md", "!package-lock.json"] },
+      { "from": "../packages/protocol", "to": "packages/protocol", "filter": ["**/*"] }
+    ],
+    "asar": false,
+    "win": {
+      "icon": "build/icon.ico",
+      "target": ["nsis"],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ZeroPulse VoiceCraft"
+    },
+    "mac": { "target": ["dmg"], "category": "public.app-category.games" }
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "tailwindcss": "^4.2.1",
+    "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.170.0"
   }
 }

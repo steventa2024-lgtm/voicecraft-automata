@@ -1,99 +1,108 @@
-# ZeroPulse
+# ZeroPulse VoiceCraft
 
-ZeroPulse is a voice-controlled Minecraft Java builder with three parts:
+ZeroPulse VoiceCraft is a Minecraft Java automation product. The public website is the storefront. The Windows application is the product.
 
-1. A TanStack Start landing/download site and mobile-friendly voice dashboard.
-2. A local Node.js bridge that receives dashboard commands over WebSocket or a
-   paired Supabase Realtime channel.
-3. A Mineflayer automation engine that parses high-level requests, generates a
-   bounded block plan, and places it in the connected world.
+Speak a build, preview the plan, and approve it on the computer that is connected to Minecraft.
 
-The platform also includes Supabase email/Google/GitHub authentication, private
-Java and Bedrock downloads, Stripe subscriptions with atomic daily usage limits,
-and SHA-256-hashed friends-and-family license keys.
+## What runs where
 
-## Run the website
+| Surface | Responsibility |
+| --- | --- |
+| Website | Landing page, getting started, Windows download, accounts, Stripe billing, license redemption, documentation |
+| Desktop app | Sign-in, Minecraft connection, voice or typed commands, voxel preview, approval, progress, history, blueprints, settings |
+| Local bridge | Loopback Mineflayer process started by the desktop app. It is the only component that places blocks |
+| Shared protocol | `packages/protocol` — one command parser, plan generator, entitlement check, and safety rules |
+
+`/dashboard` redirects to `/get-started`. The website does not contain a playable Minecraft dashboard.
+
+Bedrock and console gateway support is not included in this build. `bedrock-companion/` is not in the repository. Do not treat older Bedrock claims as shipped functionality.
+
+## Requirements
+
+- Node.js 22 or newer (the local history database uses `node:sqlite`)
+- Minecraft Java Edition for live building
+- A Supabase project and the SQL migrations in `supabase/migrations` for accounts, billing, and build authorization
+- Optional: [Ollama](https://ollama.com) on localhost for natural-language planning
+
+Survival-mode building is not implemented. The bridge places blocks with operator commands, or with creative-mode hand placement when the bot is in Creative. If neither is available, the build fails instead of reporting success.
+
+## Website
 
 ```sh
 npm install
 npm run dev
 ```
 
-The production web build is `npm run build`.
-
-## Run the Minecraft bridge from source
-
-Minecraft Java must be running in Creative mode or with cheats/operator rights.
-For a single-player world, choose **Esc → Open to LAN → Allow Cheats: ON**, then
-use the port printed in Minecraft chat.
+Production build:
 
 ```sh
-cd bridge
+npm run build
+```
+
+Copy `.env.example` into the deployment environment. Do not commit `.env`. The example file lists the public site URL, the publishable Supabase key, and server-only secrets. Server-only values stay on the website host.
+
+## Desktop application
+
+Development, with the renderer on `http://127.0.0.1:5173`:
+
+```sh
+cd desktop
 npm install
+npm run dev
 ```
 
-Create `bridge/.env`:
-
-```dotenv
-MC_HOST=localhost
-MC_PORT=25565
-MC_USERNAME=ZeroPulse
-MC_VERSION=1.20.4
-BRIDGE_PORT=8765
-ZP_PAIR_CODE=
-ZP_API_URL=http://127.0.0.1:8080
-```
-
-Then run `npm start`, open `/dashboard`, and wait for **Connected**. Direct mode
-uses `ws://localhost:8765` on the same computer. To speak from a phone, select
-Relay mode in the dashboard and put its pairing code in `ZP_PAIR_CODE` before
-starting the bridge.
-
-Examples:
-
-- `build me a large stone mansion`
-- `build a 7 floor quartz tower 18 blocks ahead`
-- `build a 21 by 15 sandstone castle behind me`
-- `clear a 31 by 31 area to my left`
-- `stop`
-
-The bot can also receive commands in Minecraft chat with the zp prefix after a
-signed-in dashboard build has paired a short-lived runner token.
-
-## Builder behavior
-
-The bridge validates every remote instruction, clamps dimensions and offsets,
-deduplicates overlapping generator output, validates blocks against the current
-Minecraft registry, rotates the plan relative to the bot, samples the terrain,
-and enforces a 120,000-operation limit.
-
-With operator rights it uses `/fill` and `/setblock`. Without op it can perform
-slower hand placement only when the bot is in Creative mode; farms and water
-features require command mode for exact placement. Survival without op is
-reported as unavailable instead of pretending the build succeeded.
-
-See [bridge/README.md](bridge/README.md) for the protocol and generator details.
-Run the automation regression suite with:
+In a second terminal, after the renderer is up:
 
 ```sh
-cd bridge
+cd desktop
+ZP_DESKTOP_DEV=1 npx electron .
+```
+
+The desktop window loads the local Vite bundle. It does not load a hosted dashboard.
+
+Packaging, from the repository root:
+
+```sh
+bash desktop/build.sh
+```
+
+On Linux this cross-compiles the Windows NSIS installer and needs Wine. The installer is unsigned unless you supply your own code-signing certificate. Electron Builder signing discovery is disabled by the absence of a certificate; do not set `CSC_IDENTITY_AUTO_DISCOVERY` in order to invent one.
+
+The generated installer path is:
+
+```text
+dist-desktop/ZeroPulse-VoiceCraft-Setup-2.0.0.exe
+```
+
+`dist-desktop/` is gitignored. Install that EXE on Windows, launch **ZeroPulse VoiceCraft**, then sign in if the account website is configured.
+
+## Connect Minecraft
+
+1. Open a Java world. For a single-player world, choose **Esc → Open to LAN → Allow Cheats: ON** and note the port from chat.
+2. In the desktop app, open **Connections**.
+3. Set the host (`localhost` for the same computer), the LAN port, the bot username, and offline authentication.
+4. Start the bridge. It listens on `127.0.0.1` only and exits unless it receives a token created by the desktop process.
+5. In **Build Studio**, type or dictate a command such as `build a stone house 10 blocks ahead`.
+6. Review the preview. Approve only if the plan, location, and account allowance are what you expect.
+
+Operator rights are required for `/fill` and `/setblock`. Creative mode is required for hand placement. A Microsoft account can be selected in Connections, but that login path was not exercised in this development environment.
+
+## Optional local planning
+
+Install Ollama, pull a model you choose, and set the model name in **Settings**. The URL must stay on localhost. The model returns a constrained JSON plan. That plan is validated and then built by the same generators as a typed command. The model cannot emit Minecraft console commands.
+
+Ordinary commands keep working when Ollama is disconnected.
+
+## Tests
+
+```sh
 npm test
 ```
 
-## Desktop companion
+The suite covers the shared parser, dispatcher safety, bridge authorization, desktop IPC rules, local history, and the website surface. It does not connect to Minecraft, Supabase, or Stripe.
 
-`desktop/` contains the Electron shell that bundles the bridge and Node runtime.
-`desktop/build.sh` stages bridge dependencies and packages Windows/macOS builds.
+## More detail
 
-## Accounts, billing, and private downloads
+See [docs/HANDOFF.md](docs/HANDOFF.md) for the implementation report, security boundaries, and what has not been live-tested.
 
-Copy .env.example values into your deployment environment and apply the
-Supabase migration. See IMPLEMENTATION_BLUEPRINT.md for provider setup, Stripe
-webhook events, R2 private-object configuration, admin promotion, and the full
-modified/new file map.
-
-The Bedrock package source is in bedrock-companion/. It bootstraps the official
-Geyser Standalone gateway and includes console discovery guidance.
-
-This repository is connected to Lovable. Do not rewrite published git history;
-normal commits on the connected branch sync back to the Lovable editor.
+This repository is connected to Lovable. Do not rewrite published git history.

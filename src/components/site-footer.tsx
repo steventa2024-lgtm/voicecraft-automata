@@ -18,7 +18,7 @@ export function SiteFooter() {
           >
             <KeyRound className="size-3.5" /> Add a Key
           </button>
-          <p className="font-mono">bridge protocol v1 · ws://localhost:8765</p>
+          <p className="font-mono">desktop app · protocol v2</p>
         </div>
       </div>
     </footer>

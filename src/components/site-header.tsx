@@ -26,11 +26,11 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-1 text-sm">
           <Link
-            to="/dashboard"
+            to="/get-started"
             className="hidden rounded-md px-3 py-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground sm:block"
             activeProps={{ className: "text-foreground" }}
           >
-            Dashboard
+            Get started
           </Link>
           <Link
             to="/world-setup"
