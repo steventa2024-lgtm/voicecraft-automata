@@ -43,8 +43,9 @@ function readSettings() {
     minecraftHost: "localhost",
     minecraftPort: 25565,
     minecraftUsername: "ZeroPulse",
-    minecraftVersion: "",
+    minecraftVersion: "1.21.1",
     minecraftAuth: "offline",
+    placementMode: "auto",
     bridgePort: 8765,
     ollamaUrl: "http://127.0.0.1:11434",
     ollamaModel: "",
@@ -257,6 +258,7 @@ function startBridge(config) {
       MC_USERNAME: config.username,
       MC_VERSION: config.version,
       MC_AUTH: config.auth,
+      PLACEMENT_MODE: config.placementMode === "auto" ? "" : config.placementMode,
       MC_CHAT_CONTROL: settings.chatControl ? "1" : "0",
       ZP_API_URL: settings.appOrigin,
       ZP_DATA_DIR: userData(),
@@ -410,6 +412,15 @@ async function handle(channel, payload) {
     return { signedIn: false };
   }
   if (channel === "bridge.start") {
+    writeSettings({
+      minecraftHost: payload.host,
+      minecraftPort: payload.port,
+      minecraftUsername: payload.username,
+      minecraftVersion: payload.version,
+      minecraftAuth: payload.auth,
+      placementMode: payload.placementMode,
+      bridgePort: payload.bridgePort,
+    });
     startBridge(payload);
     return { running: true };
   }

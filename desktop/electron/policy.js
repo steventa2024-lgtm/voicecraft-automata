@@ -45,6 +45,7 @@ const SETTING_KEYS = new Set([
   "minecraftUsername",
   "minecraftVersion",
   "minecraftAuth",
+  "placementMode",
   "bridgePort",
   "ollamaUrl",
   "ollamaModel",
@@ -90,6 +91,9 @@ export function validateInvoke(channel, payload = {}) {
     return { ok: true, channel, payload: { jobId: String(input.jobId || "") } };
   }
   if (channel === "bridge.start") {
+    if (input.placementMode !== undefined && !["auto", "command", "creative"].includes(input.placementMode)) {
+      return { ok: false, error: "Choose a supported placement mode." };
+    }
     const port = Number(input.port);
     const bridgePort = Number(input.bridgePort || 8765);
     if (!Number.isInteger(port) || port < 1 || port > 65535) return { ok: false, error: "Minecraft port is invalid." };
@@ -110,10 +114,14 @@ export function validateInvoke(channel, payload = {}) {
         username,
         version: String(input.version || "").slice(0, 16),
         auth: input.auth === "microsoft" ? "microsoft" : "offline",
+        placementMode: input.placementMode || "auto",
       },
     };
   }
   if (channel === "settings.set") {
+    if (input.placementMode !== undefined && !["auto", "command", "creative"].includes(input.placementMode)) {
+      return { ok: false, error: "Choose a supported placement mode." };
+    }
     const next = {};
     for (const [key, value] of Object.entries(input)) {
       if (!SETTING_KEYS.has(key)) return { ok: false, error: "Unknown setting." };

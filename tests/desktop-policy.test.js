@@ -19,6 +19,17 @@ test("settings reject service-role keys and remote Ollama hosts", () => {
   assert.equal(validateInvoke("settings.set", { surprise: true }).ok, false);
 });
 
+test("desktop placement mode is explicit and rejects unsupported values", () => {
+  const connection = { host: "127.0.0.1", port: 25566, version: "1.21.1", username: "VoiceCraftTest" };
+  assert.equal(validateInvoke("bridge.start", connection).payload.placementMode, "auto");
+  for (const placementMode of ["auto", "command", "creative"]) {
+    assert.equal(validateInvoke("bridge.start", { ...connection, placementMode }).payload.placementMode, placementMode);
+    assert.equal(validateInvoke("settings.set", { placementMode }).ok, true);
+  }
+  assert.equal(validateInvoke("bridge.start", { ...connection, placementMode: "shell" }).ok, false);
+  assert.equal(validateInvoke("settings.set", { placementMode: "shell" }).ok, false);
+});
+
 test("external links stay on the configured website origin", () => {
   assert.equal(externalUrl("https://zeropulse.example", "/download"), "https://zeropulse.example/download");
   assert.equal(externalUrl("https://zeropulse.example", "https://evil.example"), null);
