@@ -1,11 +1,19 @@
 import { supabase } from "./supabase";
-import { isAllowedCloudUrl } from "./api-url.js";
+import { isAllowedConnectionUrl } from "./api-url.js";
+import { getConnection } from "./connection.js";
 
-const root = (process.env.EXPO_PUBLIC_VOICECRAFT_API_URL || "").replace(/\/$/, "");
+function developmentBuild() {
+  return typeof __DEV__ === "undefined" ? false : __DEV__;
+}
 
-export const cloudConfigured = isAllowedCloudUrl(root, {
-  dev: typeof __DEV__ === "undefined" ? false : __DEV__,
-});
+export function cloudConfigured() {
+  const connection = getConnection();
+  return isAllowedConnectionUrl(connection.apiUrl, connection.mode, { dev: developmentBuild() });
+}
+
+function apiRoot() {
+  return getConnection().apiUrl.replace(/\/$/, "");
+}
 
 export type ConsolePlatform = "ps5" | "xbox";
 
@@ -72,18 +80,35 @@ export type CloudBlueprint = {
   createdAt: number;
 };
 
-async function authorized<T>(path: string, init: RequestInit & { timeout?: number } = {}): Promise<T> {
-  if (!cloudConfigured) throw new Error("VoiceCraft Cloud API is not configured.");
+async function accessToken(refresh: boolean) {
   if (!supabase) throw new Error("Configure Supabase authentication first.");
+  if (refresh) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.error || !refreshed.data.session) {
+      await supabase.auth.signOut();
+      throw new Error("Your session expired. Sign in again.");
+    }
+    return refreshed.data.session.access_token;
+  }
   const { data, error } = await supabase.auth.getSession();
   if (error || !data.session) throw new Error("Sign in to continue.");
+  if (data.session.expires_at && data.session.expires_at * 1000 < Date.now() + 60_000) {
+    return accessToken(true);
+  }
+  return data.session.access_token;
+}
+
+async function authorized<T>(path: string, init: RequestInit & { timeout?: number } = {}, refresh = false): Promise<T> {
+  if (!cloudConfigured()) throw new Error("VoiceCraft Cloud API is not configured.");
+  const token = await accessToken(refresh);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), init.timeout ?? 15_000);
   try {
     const headers = new Headers(init.headers);
-    headers.set("authorization", `Bearer ${data.session.access_token}`);
-    const response = await fetch(root + path, { ...init, headers, signal: controller.signal });
+    headers.set("authorization", `Bearer ${token}`);
+    const response = await fetch(apiRoot() + path, { ...init, headers, signal: controller.signal });
     const payload = await response.json().catch(() => null);
+    if (response.status === 401 && !refresh) return authorized<T>(path, init, true);
     if (!response.ok) throw new Error(payload?.message || `Cloud request failed (HTTP ${response.status}).`);
     return payload as T;
   } finally {
@@ -92,8 +117,8 @@ async function authorized<T>(path: string, init: RequestInit & { timeout?: numbe
 }
 
 export function fetchHealth() {
-  if (!cloudConfigured) return Promise.reject(new Error("VoiceCraft Cloud API is not configured."));
-  return fetch(`${root}/api/mobile/health`).then(async (response) => {
+  if (!cloudConfigured()) return Promise.reject(new Error("VoiceCraft Cloud API is not configured."));
+  return fetch(`${apiRoot()}/api/mobile/health`).then(async (response) => {
     const body = await response.json().catch(() => null);
     if (!response.ok) throw new Error(body?.message || "Cloud health check failed.");
     return body as CloudHealth;

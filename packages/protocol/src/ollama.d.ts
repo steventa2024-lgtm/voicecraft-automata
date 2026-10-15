@@ -20,3 +20,4 @@ export function validatePlannerResponse(text: string): {
 
 export const OLLAMA_SYSTEM_PROMPT: string;
 export function isLocalOllamaUrl(value: string): boolean;
+export function isLocalOllamaModel(value: string): boolean;

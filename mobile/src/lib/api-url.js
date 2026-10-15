@@ -17,3 +17,13 @@ export function isAllowedCloudUrl(value, { dev = false } = {}) {
     return false;
   }
 }
+
+export const CONNECTION_MODES = ["local", "community", "supplied"];
+
+export function isAllowedConnectionUrl(value, mode, { dev = false } = {}) {
+  if (!CONNECTION_MODES.includes(mode)) return false;
+  // A community operator's API is reached over HTTPS. Cleartext is limited to
+  // this computer's development network, never an arbitrary public host.
+  const allowDevHttp = mode === "community" ? false : dev;
+  return isAllowedCloudUrl(value, { dev: allowDevHttp });
+}

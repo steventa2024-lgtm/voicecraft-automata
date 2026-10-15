@@ -54,21 +54,59 @@ Offline-mode chat names without a UUID are ignored. `CLOUD_REQUIRE_FLOODGATE=1` 
 
 ## Console connection
 
-PS5 and Xbox do not get a normal custom-server field in every Minecraft UI. The practical path is BedrockConnect, or another console discovery workaround, on the same Wi-Fi as the phone, aimed at the published Bedrock host and UDP port 19132. VoiceCraft does not edit an existing single-player world or a Realm. Those limits are still true. No console hardware test was run.
+The phone asks the player to choose PlayStation 5 or Xbox. That choice is stored with the pairing claim. The server sends the player UUID and a Bedrock flag only. A UUID is not treated as proof of which console the player is holding.
+
+PS5 and Xbox do not get a normal custom-server field in every Minecraft UI. The practical path is BedrockConnect, or another console discovery workaround, on the same Wi-Fi as the phone, aimed at the published Bedrock host and UDP port 19132. The player does not install the Windows desktop app. VoiceCraft does not edit an existing single-player world, an unrelated Realm, or a server whose operator has not installed this adapter. Console multiplayer may require the platform's own subscription. Those limits are still true. No PS5 or Xbox hardware test was run.
 
 ## Speech and planning
 
-Transcription runs on the server. If `WHISPER_CPP` and `WHISPER_MODEL` are unset, the API returns 503 and the phone keeps the typed command. Recordings are written to a temporary directory and deleted after the attempt. The phone does not record in the background.
+Typed requests such as `build a small stone house` are parsed on the server without an AI model. Preview still requires an explicit approve step before any job is queued. A completed job is recorded only after the worker reports confirmed block placements. A queued job or an open TCP port is not a completed build.
 
-If `OLLAMA_URL` is a localhost URL and `OLLAMA_MODEL` is set, an unrecognized sentence can be planned through Ollama and then validated with the shared schema. Ordinary commands such as `build a small stone house` do not need it. The model cannot emit raw Minecraft commands.
+Transcription runs on the server. If `WHISPER_CPP` and `WHISPER_MODEL` are unset, the API returns 503 and the phone keeps the typed command. Recordings are written to a temporary directory and deleted after the attempt. The phone does not record in the background. Whisper is optional local software. This project does not call a paid transcription API.
 
-## Hosting
+If `OLLAMA_URL` is a localhost URL and `OLLAMA_MODEL` is a local model name, an unrecognized sentence can be planned through Ollama and then validated with the shared schema. Ordinary commands do not need it. The model cannot emit raw Minecraft commands. Model names that point at a hosted Ollama cloud tag are ignored, so the API does not call a paid inference endpoint. If Ollama is not installed, or only a hosted model is configured, the typed workflow remains available and the health check reports the planner as not configured.
 
-Smallest test host: 2 vCPU, 4 GB RAM, 20 GB disk for the API and worker without a model. Add 2 GB RAM for the Paper world. A local Whisper or Ollama model needs more RAM than a phone-class box; run those on the same VPS only if you choose a small model. Do not buy a server from this repository's scripts.
+## Connection modes
 
-**Project-owner budget is $0 for new hosting. Do not recommend or provision a rented VPS for this development milestone.** Use the existing PC for local testing, and support authorized third-party/community/self-hosted Minecraft servers for console users who have no computer. Always-on operation requires somebody's hardware, electricity and connectivity; the mobile app cannot guarantee free 24/7 compute. No server was rented here.
+The phone has one Settings control with three modes. The client only calls `/api/mobile/*`. It never opens a Minecraft console, RCON, or an arbitrary command channel.
 
-`infra/docker/docker-compose.yml` publishes the API on `127.0.0.1:8787` and, only with `--profile minecraft`, UDP 19132. Set `EULA=TRUE` yourself. RCON is off. Put Caddy or nginx with HTTPS in front before any phone build that is not a development client.
+| Mode | Who runs the API and world | What the phone may do |
+| --- | --- | --- |
+| Local developer | You, on a computer you already own, on a private network | Development and testing. Not a 24/7 service. |
+| Community server | An operator who installed this adapter | Pair, revoke your device, preview, and approve builds they allow. |
+| Your server | You, on Linux, Windows, or macOS hardware you control | Same API as local mode, including a later HTTPS address. |
+
+A cleartext `http://` address is accepted only for local developer mode and your-server mode while the app is a development build, and only for localhost or a private LAN address. Community mode requires HTTPS. Production builds require HTTPS in every mode. Credentials embedded in the URL are rejected.
+
+**Project-owner budget is $0 for new hosting. Do not recommend or provision a rented VPS for this development milestone.** Use the existing PC for local testing, and support authorized third-party, community, or self-hosted Minecraft servers for console users who have no computer. Always-on operation requires somebody's hardware, electricity, and connectivity. The mobile app cannot guarantee free 24/7 compute. No server was rented here. Open-source software does not make Minecraft free to operate.
+
+### Operator setup (Linux, Windows, macOS)
+
+Install Docker and Node.js 22 on a computer you control. From the repository root, set `CLOUD_SERVER_TOKEN` and `CLOUD_PAIR_PEPPER` to random values of at least 24 characters. On Windows PowerShell:
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
+```
+
+Do not commit those values.
+
+```sh
+docker compose -f infra/docker/docker-compose.yml up cloud-api build-worker
+```
+
+Add the Minecraft world only after you accept Mojang's EULA:
+
+```sh
+EULA=TRUE docker compose -f infra/docker/docker-compose.yml --profile minecraft up
+```
+
+That profile runs Paper, Geyser, Floodgate, and the chat bridge. Gameplay ports are Java `25565` and Bedrock UDP `19132`. RCON is off. The compose file publishes the API on `127.0.0.1:8787`. For a phone on the same private network during development, set `CLOUD_BIND` to that computer's LAN address and allow the port only on the firewall's private profile. Put Caddy or nginx with HTTPS in front before any phone that is not a development client. Do not publish the development API on the public internet.
+
+The operator's chat bridge issues pairing codes with `x-server-token`. Players claim those codes in the app and can revoke the link. A player who does not control the host cannot install this stack or issue codes.
+
+## Hosting limits
+
+A computer you already own can run the API and worker. Add memory for a Paper world. Whisper and Ollama are optional and need model files on that computer. If they are absent, typed build requests still work and the API reports transcription and planning as not configured. Do not buy a server from this repository's scripts.
 
 `supabase/migrations/202610150002_mobile_cloud.sql` is an optional locked-down mirror. The API process uses SQLite and does not write those Supabase tables yet.
 
@@ -90,7 +128,20 @@ Install Expo Go matching this SDK, then scan the QR code. That scan is the one p
 cd mobile && npx expo start --android
 ```
 
-Or `eas build --platform android --profile preview` after `eas login`. No Android device or EAS build was run.
+Or `eas build --platform android --profile preview` after a free `eas login`, when the free EAS quota is available. `mobile/eas.json` does not request a paid resource class and does not turn on automatic plan upgrades. If the free quota is exhausted, wait or build Android locally. Do not subscribe to a paid Expo plan. No Android device or EAS build was run.
+
+## Later App Store release
+
+Do not publish to the App Store from this branch. The bundle identifier `com.zeropulse.voicecraftmobile` is already set and should stay stable. A later iOS release needs:
+
+- An Apple Developer Program membership, which is the only optional spend the owner has approved. Do not enroll it from this repository.
+- A Mac with Xcode, or a free-tier EAS iOS build once that membership exists. This Windows computer cannot produce an App Store binary by itself.
+- The existing Expo account on the free plan. Expo Go remains the development path.
+- A privacy policy URL on a site the project already has. Do not register a new domain for it.
+- App privacy answers for the microphone, which is used only while the player records a request.
+- Screenshots from a real device session. A Metro start is not a store screenshot.
+
+TestFlight comes after that membership. It is not configured here.
 
 ## Readiness
 

@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { localAccountsAllowed } from "./accounts.js";
+import { isLocalOllamaModel, isLocalOllamaUrl } from "../../../packages/protocol/src/index.js";
 import { createApp, defaultPlanner, supabaseUser } from "./app.js";
 import { HttpError } from "./errors.js";
 import { readIncoming } from "./http.js";
@@ -78,7 +79,10 @@ const app = createApp({
   geyserPort: Number(process.env.GEYSER_PORT || 19132),
   publicHost: process.env.PUBLIC_BEDROCK_HOST || "",
   publicPort: Number(process.env.PUBLIC_BEDROCK_PORT || 19132),
-  planner: process.env.OLLAMA_URL ? defaultPlanner : null,
+  planner:
+    isLocalOllamaUrl(process.env.OLLAMA_URL || "") && isLocalOllamaModel(process.env.OLLAMA_MODEL || "")
+      ? defaultPlanner
+      : null,
 });
 
 const server = createServer(async (incoming, outgoing) => {

@@ -10,7 +10,7 @@ import { HttpError } from "../services/cloud-api/src/errors.js";
 import { readIncoming } from "../services/cloud-api/src/http.js";
 import { openCloudStore } from "../services/cloud-api/src/store.js";
 import { advanceJob } from "../services/cloud-api/src/worker.js";
-import { isAllowedCloudUrl } from "../mobile/src/lib/api-url.js";
+import { isAllowedCloudUrl, isAllowedConnectionUrl } from "../mobile/src/lib/api-url.js";
 import { worldBlocksFromPlan } from "../services/build-worker/plan-world.js";
 import { isFloodgateUuid, pairingIssueBody } from "../services/minecraft-host/chat-bridge.js";
 import { buildPlan, parseCommand } from "../packages/protocol/src/index.js";
@@ -107,6 +107,12 @@ test("mobile cloud URLs stay https except for local development hosts", () => {
   assert.equal(isAllowedCloudUrl("http://127.0.0.1:8787", { dev: false }), false);
   assert.equal(isAllowedCloudUrl("http://127.0.0.1:8787", { dev: true }), true);
   assert.equal(isAllowedCloudUrl("http://203.0.113.8", { dev: true }), false);
+  assert.equal(isAllowedConnectionUrl("http://192.168.4.33:8787", "local", { dev: true }), true);
+  assert.equal(isAllowedConnectionUrl("http://192.168.4.33:8787", "community", { dev: true }), false);
+  assert.equal(isAllowedConnectionUrl("https://play.example.net", "community", { dev: false }), true);
+  assert.equal(isAllowedConnectionUrl("http://192.168.4.33:8787", "supplied", { dev: true }), true);
+  assert.equal(isAllowedConnectionUrl("http://203.0.113.8:8787", "supplied", { dev: true }), false);
+  assert.equal(isAllowedConnectionUrl("https://user:pass@play.example.net", "supplied", { dev: false }), false);
 });
 
 test("health does not claim a Minecraft connection that was not probed", async () => {

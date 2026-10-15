@@ -4,6 +4,7 @@ import {
   buildPlan,
   describeInstruction,
   evaluateEntitlement,
+  isLocalOllamaModel,
   isLocalOllamaUrl,
   parseCommand,
   planToInstruction,
@@ -413,7 +414,7 @@ export function createApp(options) {
 
 export async function defaultPlanner(prompt) {
   const url = process.env.OLLAMA_URL || "";
-  if (!isLocalOllamaUrl(url)) return null;
+  if (!isLocalOllamaUrl(url) || !isLocalOllamaModel(process.env.OLLAMA_MODEL || "")) return null;
   const response = await fetch(new URL("/api/chat", url), {
     method: "POST",
     headers: { "content-type": "application/json" },

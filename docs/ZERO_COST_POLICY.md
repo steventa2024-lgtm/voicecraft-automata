@@ -14,9 +14,11 @@ Open-source source code, mobile development tools and local testing can be free,
 - **No-PC console players:** an *already-running* authorized Minecraft server is still required. It may be community-operated, donated, run on hardware another person owns, or supplied by the user. A free tier may be explored **only when its actual quotas and suitability are verified**. No free uptime, capacity or console connection is promised.
 - **Console restrictions:** PS5/Xbox players can join compatible Bedrock multiplayer servers using documented, platform-permitted setup methods; this does not control an existing console single-player world. Platform multiplayer subscriptions may be required independently of VoiceCraft.
 
-## Two modes (do not confuse them)
+## Three connection modes (one app)
 
-### 1. Developer local mode — $0 new purchase
+These are deployment choices inside the same mobile app. They are not three products, and none of them lets the phone send Minecraft console commands.
+
+### A. Local developer mode — $0 new purchase
 
 A developer uses their existing computer to run the cloud API, optional Minecraft server and build worker, and runs the mobile client through Expo Go.
 
@@ -29,16 +31,19 @@ This is intended for development. It is not a 24/7 service for players who do no
 5. Verify sign-in and API health before starting Minecraft.
 6. Start a test Minecraft server only after accepting its EULA and checking version compatibility.
 
-### 2. No-PC console user mode — external compatible host required
+### B. Community server mode — operator-owned hardware
 
-Console users need only their console and optionally a phone. They do **not** install the desktop companion or run a local bridge. The necessary API and Minecraft automation run on an authorized external host.
+An authorized community server operator hosts a compatible Minecraft world and installs the VoiceCraft adapter. Console players join that world. The phone connects only to the operator's VoiceCraft API over HTTPS.
 
-Potential hosting paths:
-- A community contributor runs the server and VoiceCraft bridge on hardware they already maintain.
-- A volunteer-managed multiplayer server installs the authorized gateway and executor.
-- An owner supplies their own hosting account; **this is optional, never required by the mobile app itself**.
+The operator must explicitly install and configure the integration. Players can pair, and they can revoke their own device. They cannot install integrations or run privileged actions on a server they do not control.
 
-No seamless phone-controlled construction can be promised in unrelated servers or single-player worlds. Make every connection status and service limitation explicit in the UI.
+### C. User-supplied server mode — hardware the owner already controls
+
+An authorized server owner runs the same API, worker, and Minecraft adapter on a Linux, Windows, or macOS computer they already have. Setup is in `docs/MOBILE_CLOUD.md`. This milestone does not rent a VPS.
+
+If the person does not control the server, this mode does not apply. They use community mode and need the operator's permission.
+
+No seamless phone-controlled construction can be promised in unrelated servers or single-player worlds. Make every connection status and service limitation explicit in the UI. Open-source software does not make a Minecraft server free to operate: electricity, hardware, and any platform multiplayer subscription remain real costs.
 
 ## Expense guardrails
 
@@ -59,7 +64,7 @@ Before advertising a formal open-source license, audit third-party code/dependen
 
 - [ ] Expo mobile interface and the local API can be developed and tested without subscribing to any paid service.
 - [ ] The mobile app behaves honestly when Supabase, a hosted server, AI speech transcription, or Minecraft is offline.
-- [ ] Clear docs distinguish developer local mode from a no-PC console user.
+- [ ] Clear docs distinguish local developer mode, community server mode, and user-supplied server mode.
 - [ ] Existing computer + local test network is sufficient for initial end-to-end testing, subject to available hardware and account access.
 - [ ] Production console operation is described as dependent on a real third-party/community/owner host; no "free forever" server promise.
 - [ ] CI/dev scripts do not provision paid resources or print secrets.

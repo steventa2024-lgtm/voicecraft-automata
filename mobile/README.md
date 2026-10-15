@@ -44,9 +44,15 @@ npm run typecheck
 npx expo start
 ```
 
-On an iPhone, install Expo Go for this SDK from the App Store and scan the QR code if `npx expo start` prints one. If the phone and computer are not on the same network, run `npx expo start --tunnel`. Tunnel mode needs an Expo account.
+On an iPhone, install Expo Go for this SDK from the App Store and scan the QR code from `npx expo start --lan`. Tunnel mode is optional and uses an Expo account; prefer LAN on the same private Wi-Fi so no extra service is required.
+
+Settings stores one of three API modes: local developer, community server, or your own server. The phone still only calls the VoiceCraft API. Sign-in uses the existing Supabase project. Session refresh signs the player out when the refresh token is no longer accepted.
 
 This environment did not complete a device install. Do not treat a Metro start as a passed iPhone test.
+
+## Later store builds
+
+`eas.json` has development, preview, and production profiles without a paid resource class. Use Expo Go now. Use `eas build` only inside the free quota. Android can also be built locally after `npx expo prebuild` if the Android SDK is already installed. iOS store distribution needs the Apple Developer Program, which is the only approved future expense, plus a Mac or a free-tier EAS build. Do not publish to the App Store yet. The bundle id `com.zeropulse.voicecraftmobile` stays as it is.
 
 ## Cloud Minecraft
 

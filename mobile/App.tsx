@@ -15,6 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio";
 import type { Session } from "@supabase/supabase-js";
 import { authConfigured, supabase } from "./src/lib/supabase";
+import { connectionModeLabel, getConnection, saveConnection, subscribeConnection } from "./src/lib/connection.js";
 import {
   cancelJob,
   claimPairing,
@@ -84,6 +85,8 @@ function Root() {
   const [job, setJob] = useState<CloudJob | null>(null);
   const [blueprints, setBlueprints] = useState<CloudBlueprint[]>([]);
   const [blueprintName, setBlueprintName] = useState("");
+  const [connection, setConnection] = useState(getConnection);
+  const [apiDraft, setApiDraft] = useState(getConnection().apiUrl);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder);
 
@@ -92,16 +95,34 @@ function Root() {
       setLoadingAuth(false);
       return;
     }
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    const client = supabase;
+    client.auth.getSession().then(async ({ data }) => {
+      const current = data.session;
+      if (current?.expires_at && current.expires_at * 1000 < Date.now() + 60_000) {
+        const refreshed = await client.auth.refreshSession();
+        if (refreshed.error || !refreshed.data.session) {
+          await client.auth.signOut();
+          setSession(null);
+        } else {
+          setSession(refreshed.data.session);
+        }
+      } else {
+        setSession(current);
+      }
       setLoadingAuth(false);
     }).catch(() => setLoadingAuth(false));
     const listener = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
     return () => listener.data.subscription.unsubscribe();
   }, []);
 
+  useEffect(() => subscribeConnection(() => {
+    const next = getConnection();
+    setConnection(next);
+    setApiDraft(next.apiUrl);
+  }), []);
+
   async function refreshCloud() {
-    if (!cloudConfigured || !session) return;
+    if (!cloudConfigured() || !session) return;
     const next = await fetchSession();
     setCloud(next);
     if (next.activeJob) setJob(next.activeJob);
@@ -110,7 +131,7 @@ function Root() {
   useEffect(() => {
     if (!session) return;
     refreshCloud().catch(() => setCloud(null));
-  }, [session, tab]);
+  }, [session, tab, connection.mode, connection.apiUrl]);
 
   useEffect(() => {
     if (!job || !["queued", "building", "cancelling"].includes(job.status)) return;
@@ -277,7 +298,8 @@ function Root() {
             <Text style={styles.hero}>Speak it. Preview it. Build it.</Text>
             <Card>
               <Status label={cloud?.link ? `Linked ${cloud.link.playerName}` : "No Minecraft player linked"} good={Boolean(cloud?.link)} />
-              <Status label={cloudConfigured ? "Cloud API configured" : "Cloud API not configured"} good={cloudConfigured} />
+              <Status label={cloudConfigured() ? "Cloud API configured" : "Cloud API not configured"} good={cloudConfigured()} />
+              <Note>{connectionModeLabel(connection.mode)}. The phone sends VoiceCraft API requests only. It cannot send Minecraft console commands.</Note>
               <Text style={styles.cardTitle}>{cloud?.link?.worldName || "No world"}</Text>
               <Note>{cloud?.entitlement.message || (cloud ? `Plan ${cloud.entitlement.plan || "unknown"}` : "Sign-in succeeded. Pull to reopen this tab after the API is configured.")}</Note>
               {cloud?.entitlement.tasksRemaining != null ? <Note>{cloud.entitlement.tasksRemaining} tasks remaining today.</Note> : null}
@@ -356,6 +378,7 @@ function Root() {
               <Card>
                 <Text style={styles.cardTitle}>Linked</Text>
                 <Note>{cloud.link.playerName} on {cloud.link.platform} · {cloud.link.worldName}</Note>
+                <Note>{cloud.link.bedrock ? "The server reported a Bedrock player id. PlayStation or Xbox is the choice you made here, not a guess from that id." : "The server did not report a Bedrock player id."}</Note>
                 <Button title="Unpair" danger onPress={() => {
                   revokePairing().then(() => refreshCloud()).catch((error) => Alert.alert("Could not unpair", errorMessage(error)));
                 }} />
@@ -398,8 +421,28 @@ function Root() {
               <Text style={styles.cardTitle}>{session.user.email}</Text>
               <Note>App 0.2.0 · remote push notifications are not configured.</Note>
               <Note>Microphone access is requested only when you record. Background recording is off.</Note>
-              <Note>{cloudConfigured ? "Cloud API URL is set." : "Cloud API URL is not set."}</Note>
+              <Note>{cloud?.entitlement.plan ? `Plan ${cloud.entitlement.plan}. ${cloud.entitlement.message || ""}` : "Subscription status appears after the API accepts this session."}</Note>
+              <Note>{cloudConfigured() ? `API ${connectionModeLabel(connection.mode)}` : "Cloud API URL is not set."}</Note>
               <Button title="Sign out" onPress={() => supabase?.auth.signOut()} />
+            </Card>
+            <Card>
+              <Text style={styles.cardTitle}>Server connection</Text>
+              <Note>One app, three ways to reach an authorized VoiceCraft API. None of these places blocks on the phone.</Note>
+              <Button title="Local developer" secondary={connection.mode !== "local"} onPress={() => setConnection({ ...connection, mode: "local" })} />
+              <Button title="Community server" secondary={connection.mode !== "community"} onPress={() => setConnection({ ...connection, mode: "community" })} />
+              <Button title="Your server" secondary={connection.mode !== "supplied"} onPress={() => setConnection({ ...connection, mode: "supplied" })} />
+              <Field value={apiDraft} onChangeText={setApiDraft} autoCapitalize="none" placeholder="https://api.example" accessibilityLabel="VoiceCraft API address" />
+              <Button title="Save connection" onPress={() => {
+                try {
+                  saveConnection({ mode: connection.mode, apiUrl: apiDraft.trim() });
+                  Alert.alert("Connection saved", "The next request uses this API. A build still needs a preview you approve.");
+                } catch (error) {
+                  Alert.alert("Address not allowed", errorMessage(error));
+                }
+              }} />
+              <Note>Local developer mode uses this computer on your private network. It is for testing, not a 24/7 service.</Note>
+              <Note>Community server mode uses HTTPS to an operator who installed the VoiceCraft adapter. You can pair and revoke your device. You cannot administer their world from this phone.</Note>
+              <Note>Your server mode is for a Minecraft host you control. Install the adapter from the repository docs. If you do not control the server, use community mode and ask the operator.</Note>
             </Card>
           </View>
         ) : null}
