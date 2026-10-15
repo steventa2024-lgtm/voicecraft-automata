@@ -248,4 +248,6 @@ bash desktop/build.sh
 
 ## Commit SHA
 
-`PENDING`
+`3e002d0cf14813f84ef91509dd133aae5ccf7cb5`
+
+The line above is the product commit. A follow-up commit only records this SHA in the handoff.
